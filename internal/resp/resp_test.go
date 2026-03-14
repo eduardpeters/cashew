@@ -22,40 +22,48 @@ func TestNewSimpleString(t *testing.T) {
 
 func TestInvalidSimpleStrings(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 	}{
-		{"Not\rgood"},
-		{"\rNot good"},
-		{"Not good\r"},
-		{"Not\nvalid"},
-		{"\nNot valid"},
-		{"Not valid\n"},
+		{"with CR", "Not\rgood"},
+		{"leading CR", "\rNot good"},
+		{"trailing CR", "Not good\r"},
+		{"with LF", "Not\nvalid"},
+		{"leading LF", "\nNot valid"},
+		{"trailing LF", "Not valid\n"},
 	}
 
 	for _, tt := range tests {
-		_, err := resp.NewSimpleString(tt.input)
-		if err == nil {
-			t.Errorf("Expected error, got %v", err)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := resp.NewSimpleString(tt.input)
+			if err == nil {
+				t.Errorf("Expected error, got %v", err)
+			}
+		})
 	}
 }
 
 func TestMarshalSimpleStrings(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected string
-	}{{"OK", "+OK\r\n"},
-		{"Hello, World", "+Hello, World\r\n"}}
+	}{
+		{"no whitespace", "OK", "+OK\r\n"},
+		{"with whitespace", "Hello, World", "+Hello, World\r\n"},
+	}
 
 	for _, tt := range tests {
-		value, err := resp.NewSimpleString(tt.input)
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
-		got := value.Marshal()
-		if got != tt.expected {
-			t.Errorf("want %q - got %q", tt.expected, got)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			value, err := resp.NewSimpleString(tt.input)
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
+			got := value.Marshal()
+			if got != tt.expected {
+				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
 	}
 }
 
@@ -75,167 +83,187 @@ func TestNewSimpleError(t *testing.T) {
 
 func TestInvalidSimpleErrors(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 	}{
-		{"Error\rmessage"},
-		{"\rError message"},
-		{"Not working\r"},
-		{"Not\nworking"},
-		{"\nsomething wrong"},
-		{"something wrong\n"},
+		{"with CR", "Error\rmessage"},
+		{"leading CR", "\rError message"},
+		{"trailing CR", "Not working\r"},
+		{"with LF", "Not\nworking"},
+		{"leading LF", "\nsomething wrong"},
+		{"trailing LF", "something wrong\n"},
 	}
 
 	for _, tt := range tests {
-		_, err := resp.NewSimpleError(tt.input)
-		if err == nil {
-			t.Errorf("Expected error, got %v", err)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := resp.NewSimpleError(tt.input)
+			if err == nil {
+				t.Errorf("Expected error, got %v", err)
+			}
+		})
 	}
 }
 
 func TestMarshalSimpleErrors(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
-		{"ERROR unknown command 'asdf'", "-ERROR unknown command 'asdf'\r\n"},
-		{"Error message", "-Error message\r\n"},
+		{"longer message", "ERROR unknown command 'asdf'", "-ERROR unknown command 'asdf'\r\n"},
+		{"shorter message", "Error message", "-Error message\r\n"},
 	}
 
 	for _, tt := range tests {
-		value, err := resp.NewSimpleError(tt.input)
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
-		got := value.Marshal()
-		if got != tt.expected {
-			t.Errorf("want %q - got %q", tt.expected, got)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			value, err := resp.NewSimpleError(tt.input)
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
+			got := value.Marshal()
+			if got != tt.expected {
+				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
 	}
 }
 
 func TestNewInteger(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected int64
 	}{
-		{"0", 0},
-		{"-1", -1},
-		{"1", 1},
-		{"+42", 42},
-		{"+0", 0},
-		{"-0", 0},
-		{"9223372036854775807", 9223372036854775807},
-		{"-9223372036854775808", -9223372036854775808},
+		{"zero", "0", 0},
+		{"negative one", "-1", -1},
+		{"one", "1", 1},
+		{"with leading plus", "+42", 42},
+		{"plus zero", "+0", 0},
+		{"negative zero", "-0", 0},
+		{"largest int64", "9223372036854775807", 9223372036854775807},
+		{"lowest int64", "-9223372036854775808", -9223372036854775808},
 	}
 
 	for _, tt := range tests {
-		got, err := resp.NewInteger(tt.input)
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resp.NewInteger(tt.input)
 
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
 
-		if got.GetValue() != tt.expected {
-			t.Errorf("want %d - got %d", tt.expected, got.GetValue())
-		}
+			if got.GetValue() != tt.expected {
+				t.Errorf("want %d - got %d", tt.expected, got.GetValue())
+			}
+		})
 	}
 }
 
 func TestInvalidIntegers(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 	}{
-		{"3.14"},
-		{"1234s"},
-		{"O9128"},
-		{"abcdef"},
-		{"-123 7"},
-		{""},
-		{"9223372036854775808"},
-		{"-9223372036854775809"},
+		{"floating point", "3.14"},
+		{"trailing letter", "1234s"},
+		{"leading letter", "O9128"},
+		{"only letters", "abcdef"},
+		{"whitespace", "-123 7"},
+		{"empty", ""},
+		{"largest int64 + 1", "9223372036854775808"},
+		{"lowest int64 -1", "-9223372036854775809"},
 	}
 
 	for _, tt := range tests {
-		_, err := resp.NewInteger(tt.input)
-		if err == nil {
-			t.Errorf("Expected error, got %v", err)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := resp.NewInteger(tt.input)
+			if err == nil {
+				t.Errorf("Expected error, got %v", err)
+			}
+		})
 	}
 }
 
 func TestMarshalIntegers(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
-		{"0", ":0\r\n"},
-		{"-1", ":-1\r\n"},
-		{"1", ":1\r\n"},
-		{"9302", ":9302\r\n"},
-		{"-1234", ":-1234\r\n"},
+		{"zero", "0", ":0\r\n"},
+		{"negative one", "-1", ":-1\r\n"},
+		{"one", "1", ":1\r\n"},
+		{"positive number", "9302", ":9302\r\n"},
+		{"negative number", "-1234", ":-1234\r\n"},
 	}
 
 	for _, tt := range tests {
-		value, err := resp.NewInteger(tt.input)
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
-		got := value.Marshal()
-		if got != tt.expected {
-			t.Errorf("want %q - got %q", tt.expected, got)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			value, err := resp.NewInteger(tt.input)
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
+			got := value.Marshal()
+			if got != tt.expected {
+				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
 	}
 }
 
 func TestNewBulkString(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 	}{
-		{""},
-		{"hello"},
-		{"hello world"},
-		{"this\nis\nallowed"},
-		{"this\r\nis also allowed"},
+		{"empty", ""},
+		{"single string", "hello"},
+		{"whitespace", "hello world"},
+		{"with newlines", "this\nis\nallowed"},
+		{"with CRLF", "this\r\nis also allowed"},
 	}
 
 	for _, tt := range tests {
-		got, err := resp.NewBulkString(tt.input)
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resp.NewBulkString(tt.input)
 
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
 
-		if got.GetValue() != tt.input {
-			t.Errorf("want %q - got %q", tt.input, got.GetValue())
-		}
+			if got.GetValue() != tt.input {
+				t.Errorf("want %q - got %q", tt.input, got.GetValue())
+			}
+		})
 	}
 }
 
 func TestMarshalBulkString(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
-		{"", "$0\r\n\r\n"},
-		{"hello", "$5\r\nhello\r\n"},
-		{"hello world", "$11\r\nhello world\r\n"},
-		{"this\nis\nallowed", "$15\r\nthis\nis\nallowed\r\n"},
-		{"this\r\nis also allowed", "$21\r\nthis\r\nis also allowed\r\n"},
+		{"empty", "", "$0\r\n\r\n"},
+		{"single string", "hello", "$5\r\nhello\r\n"},
+		{"whitespace", "hello world", "$11\r\nhello world\r\n"},
+		{"with newlines", "this\nis\nallowed", "$15\r\nthis\nis\nallowed\r\n"},
+		{"with CRLF", "this\r\nis also allowed", "$21\r\nthis\r\nis also allowed\r\n"},
 	}
 
 	for _, tt := range tests {
-		value, err := resp.NewBulkString(tt.input)
+		t.Run(tt.name, func(t *testing.T) {
+			value, err := resp.NewBulkString(tt.input)
 
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
 
-		got := value.Marshal()
-		if got != tt.expected {
-			t.Errorf("want %q - got %q", tt.expected, got)
-		}
-
+			got := value.Marshal()
+			if got != tt.expected {
+				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
 	}
 }
 
@@ -252,7 +280,6 @@ func TestNewArray(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			got, err := resp.NewArray(tt.input)
 
 			if err != nil {
