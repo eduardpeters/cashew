@@ -34,7 +34,6 @@ func TestInvalidSimpleStrings(t *testing.T) {
 
 	for _, tt := range tests {
 		_, err := resp.NewSimpleString(tt.input)
-		t.Log(err)
 		if err == nil {
 			t.Errorf("Expected error, got %v", err)
 		}
@@ -242,23 +241,50 @@ func TestMarshalBulkString(t *testing.T) {
 
 func TestNewArray(t *testing.T) {
 	tests := []struct {
+		name  string
 		input []resp.CashewValue
 	}{
-		{[]resp.CashewValue{}},
+		{"empty", []resp.CashewValue{}},
+		{"single simple string", []resp.CashewValue{
+			mustNewSimpleString(t, "hello"),
+		}},
 	}
 
 	for _, tt := range tests {
-		got, err := resp.NewArray(tt.input)
+		t.Run(tt.name, func(t *testing.T) {
 
-		if err != nil {
-			t.Errorf("Unexpected error %v", err)
-		}
+			got, err := resp.NewArray(tt.input)
 
-		gotLength := len(got.Values)
-		wantLength := len(tt.input)
-		if gotLength != wantLength {
-			t.Errorf("wrong array length: want %d - got %d", wantLength, gotLength)
-		}
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
 
+			gotValuesRaw := got.GetValue()
+			gotValues, ok := gotValuesRaw.([]resp.CashewValue)
+			if !ok {
+				t.Fatalf("array value not []CashewValue")
+			}
+
+			gotLength := len(gotValues)
+			wantLength := len(tt.input)
+			if gotLength != wantLength {
+				t.Errorf("wrong array length: want %d - got %d", wantLength, gotLength)
+			}
+
+			for i := range gotValues {
+				if gotValues[i] != tt.input[i] {
+					t.Errorf("wrong array element: want %v - got %v", tt.input[i], gotValues[i])
+				}
+			}
+		})
 	}
+}
+
+func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewSimpleString(s)
+	if err != nil {
+		t.Fatalf("NewSimpleString(%q): %v", s, err)
+	}
+	return v
 }

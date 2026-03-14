@@ -39,7 +39,7 @@ func NewSimpleString(s string) (*SimpleString, error) {
 	return &SimpleString{s}, nil
 }
 
-func (s SimpleString) GetValue() string {
+func (s SimpleString) GetValue() any {
 	return s.value
 }
 
@@ -63,7 +63,7 @@ func NewSimpleError(s string) (*SimpleError, error) {
 	return &SimpleError{s}, nil
 }
 
-func (s SimpleError) GetValue() string {
+func (s SimpleError) GetValue() any {
 	return s.value
 }
 
@@ -79,7 +79,7 @@ type Integer struct {
 	value int64
 }
 
-func (s Integer) GetValue() int64 {
+func (s Integer) GetValue() any {
 	return s.value
 }
 
@@ -107,7 +107,7 @@ func NewBulkString(s string) (*BulkString, error) {
 	return &BulkString{s}, nil
 }
 
-func (s BulkString) GetValue() string {
+func (s BulkString) GetValue() any {
 	return s.value
 }
 
@@ -132,9 +132,13 @@ func hasInvalidCharacters(s string) bool {
 }
 
 type Array struct {
-	Values []CashewValue
+	values []CashewValue
 }
 
 func NewArray(values []CashewValue) (*Array, error) {
 	return &Array{values}, nil
+}
+
+func (a Array) GetValue() any {
+	return a.values
 }
