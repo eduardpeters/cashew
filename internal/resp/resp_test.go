@@ -188,3 +188,54 @@ func TestMarshalIntegers(t *testing.T) {
 		}
 	}
 }
+
+func TestNewBulkString(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{""},
+		{"hello"},
+		{"hello world"},
+		{"this\nis\nallowed"},
+		{"this\r\nis also allowed"},
+	}
+
+	for _, tt := range tests {
+		got, err := resp.NewBulkString(tt.input)
+
+		if err != nil {
+			t.Errorf("Unexpected error %v", err)
+		}
+
+		if got.Value != tt.input {
+			t.Errorf("want %q - got %q", tt.input, got.Value)
+		}
+	}
+}
+
+func TestMarshalBulkString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", "$0\r\n\r\n"},
+		{"hello", "$5\r\nhello\r\n"},
+		{"hello world", "$11\r\nhello world\r\n"},
+		{"this\nis\nallowed", "$15\r\nthis\nis\nallowed\r\n"},
+		{"this\r\nis also allowed", "$21\r\nthis\r\nis also allowed\r\n"},
+	}
+
+	for _, tt := range tests {
+		value, err := resp.NewBulkString(tt.input)
+
+		if err != nil {
+			t.Errorf("Unexpected error %v", err)
+		}
+
+		got := value.Marshal()
+		if got != tt.expected {
+			t.Errorf("want %q - got %q", tt.expected, got)
+		}
+
+	}
+}

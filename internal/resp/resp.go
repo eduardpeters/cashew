@@ -11,6 +11,7 @@ const (
 	IDENTIFER_SIMPLE_ERROR  = "-"
 	IDENTIFER_INTEGER       = ":"
 	IDENTIFER_SIMPLE_STRING = "+"
+	IDENTIFER_BULK_STRING   = "$"
 	TERMINATOR              = "\r\n"
 )
 
@@ -71,6 +72,18 @@ func NewInteger(s string) (*Integer, error) {
 
 func (i Integer) Marshal() string {
 	return fmt.Sprintf("%s%d%s", IDENTIFER_INTEGER, i.Value, TERMINATOR)
+}
+
+type BulkString struct {
+	Value string
+}
+
+func NewBulkString(s string) (*BulkString, error) {
+	return &BulkString{s}, nil
+}
+
+func (s BulkString) Marshal() string {
+	return fmt.Sprintf("%s%d%s%s%s", IDENTIFER_BULK_STRING, len(s.Value), TERMINATOR, s.Value, TERMINATOR)
 }
 
 func hasInvalidCharacters(s string) bool {
