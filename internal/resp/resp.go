@@ -2,8 +2,8 @@ package resp
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
+	"strings"
 )
 
 // VALUE TYPE IDENTIFIERS
@@ -39,7 +39,11 @@ func NewSimpleString(s string) (*SimpleString, error) {
 }
 
 func (s SimpleString) Marshal() string {
-	return fmt.Sprintf("%s%s%s", IDENTIFER_SIMPLE_STRING, s.Value, TERMINATOR)
+	var b strings.Builder
+	b.WriteString(IDENTIFER_SIMPLE_STRING)
+	b.WriteString(s.Value)
+	b.WriteString(TERMINATOR)
+	return b.String()
 }
 
 type SimpleError struct {
@@ -55,7 +59,11 @@ func NewSimpleError(s string) (*SimpleError, error) {
 }
 
 func (s SimpleError) Marshal() string {
-	return fmt.Sprintf("%s%s%s", IDENTIFER_SIMPLE_ERROR, s.Value, TERMINATOR)
+	var b strings.Builder
+	b.WriteString(IDENTIFER_SIMPLE_ERROR)
+	b.WriteString(s.Value)
+	b.WriteString(TERMINATOR)
+	return b.String()
 }
 
 type Integer struct {
@@ -71,7 +79,11 @@ func NewInteger(s string) (*Integer, error) {
 }
 
 func (i Integer) Marshal() string {
-	return fmt.Sprintf("%s%d%s", IDENTIFER_INTEGER, i.Value, TERMINATOR)
+	var b strings.Builder
+	b.WriteString(IDENTIFER_INTEGER)
+	b.WriteString(strconv.FormatInt(i.Value, 10))
+	b.WriteString(TERMINATOR)
+	return b.String()
 }
 
 type BulkString struct {
@@ -83,7 +95,13 @@ func NewBulkString(s string) (*BulkString, error) {
 }
 
 func (s BulkString) Marshal() string {
-	return fmt.Sprintf("%s%d%s%s%s", IDENTIFER_BULK_STRING, len(s.Value), TERMINATOR, s.Value, TERMINATOR)
+	var b strings.Builder
+	b.WriteString(IDENTIFER_BULK_STRING)
+	b.WriteString(strconv.FormatInt(int64(len(s.Value)), 10))
+	b.WriteString(TERMINATOR)
+	b.WriteString(s.Value)
+	b.WriteString(TERMINATOR)
+	return b.String()
 }
 
 func hasInvalidCharacters(s string) bool {
