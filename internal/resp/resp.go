@@ -3,15 +3,22 @@ package resp
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
+// VALUE TYPE IDENTIFIERS
 const (
 	IDENTIFER_SIMPLE_ERROR  = "-"
+	IDENTIFER_INTEGER       = ":"
 	IDENTIFER_SIMPLE_STRING = "+"
 	TERMINATOR              = "\r\n"
 )
 
-var INVALID_CHARACTERS_ERROR = errors.New("illegal character present: '\\r' or '\\n'")
+// ERRORS
+var (
+	INVALID_CHARACTERS_ERROR = errors.New("illegal character present: '\\r' or '\\n'")
+	INVALID_INTEGER_ERROR    = errors.New("input is not an integer")
+)
 
 type CashewValue interface {
 	Marshal() string
@@ -48,6 +55,22 @@ func NewSimpleError(s string) (*SimpleError, error) {
 
 func (s SimpleError) Marshal() string {
 	return fmt.Sprintf("%s%s%s", IDENTIFER_SIMPLE_ERROR, s.Value, TERMINATOR)
+}
+
+type Integer struct {
+	Value int64
+}
+
+func NewInteger(s string) (*Integer, error) {
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return nil, INVALID_INTEGER_ERROR
+	}
+	return &Integer{n}, nil
+}
+
+func (i Integer) Marshal() string {
+	return fmt.Sprintf("%s%d%s", IDENTIFER_INTEGER, i.Value, TERMINATOR)
 }
 
 func hasInvalidCharacters(s string) bool {
