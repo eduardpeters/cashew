@@ -15,8 +15,8 @@ func TestNewSimpleString(t *testing.T) {
 		t.Errorf("Unexpected error %v", err)
 	}
 
-	if got.Value != input {
-		t.Errorf("want %q - got %q", input, got.Value)
+	if got.GetValue() != input {
+		t.Errorf("want %q - got %q", input, got.GetValue())
 	}
 }
 
@@ -69,8 +69,8 @@ func TestNewSimpleError(t *testing.T) {
 		t.Errorf("Unexpected error %v", err)
 	}
 
-	if got.Value != input {
-		t.Errorf("want %q - got %q", input, got.Value)
+	if got.GetValue() != input {
+		t.Errorf("want %q - got %q", input, got.GetValue())
 	}
 }
 
@@ -137,8 +137,8 @@ func TestNewInteger(t *testing.T) {
 			t.Errorf("Unexpected error %v", err)
 		}
 
-		if got.Value != tt.expected {
-			t.Errorf("want %d - got %d", tt.expected, got.Value)
+		if got.GetValue() != tt.expected {
+			t.Errorf("want %d - got %d", tt.expected, got.GetValue())
 		}
 	}
 }
@@ -207,8 +207,8 @@ func TestNewBulkString(t *testing.T) {
 			t.Errorf("Unexpected error %v", err)
 		}
 
-		if got.Value != tt.input {
-			t.Errorf("want %q - got %q", tt.input, got.Value)
+		if got.GetValue() != tt.input {
+			t.Errorf("want %q - got %q", tt.input, got.GetValue())
 		}
 	}
 }
@@ -235,6 +235,29 @@ func TestMarshalBulkString(t *testing.T) {
 		got := value.Marshal()
 		if got != tt.expected {
 			t.Errorf("want %q - got %q", tt.expected, got)
+		}
+
+	}
+}
+
+func TestNewArray(t *testing.T) {
+	tests := []struct {
+		input []resp.CashewValue
+	}{
+		{[]resp.CashewValue{}},
+	}
+
+	for _, tt := range tests {
+		got, err := resp.NewArray(tt.input)
+
+		if err != nil {
+			t.Errorf("Unexpected error %v", err)
+		}
+
+		gotLength := len(got.Values)
+		wantLength := len(tt.input)
+		if gotLength != wantLength {
+			t.Errorf("wrong array length: want %d - got %d", wantLength, gotLength)
 		}
 
 	}

@@ -22,11 +22,12 @@ var (
 )
 
 type CashewValue interface {
+	GetValue() any
 	Marshal() string
 }
 
 type SimpleString struct {
-	Value string
+	value string
 }
 
 func NewSimpleString(s string) (*SimpleString, error) {
@@ -38,16 +39,20 @@ func NewSimpleString(s string) (*SimpleString, error) {
 	return &SimpleString{s}, nil
 }
 
+func (s SimpleString) GetValue() string {
+	return s.value
+}
+
 func (s SimpleString) Marshal() string {
 	var b strings.Builder
 	b.WriteString(IDENTIFER_SIMPLE_STRING)
-	b.WriteString(s.Value)
+	b.WriteString(s.value)
 	b.WriteString(TERMINATOR)
 	return b.String()
 }
 
 type SimpleError struct {
-	Value string
+	value string
 }
 
 func NewSimpleError(s string) (*SimpleError, error) {
@@ -58,16 +63,24 @@ func NewSimpleError(s string) (*SimpleError, error) {
 	return &SimpleError{s}, nil
 }
 
+func (s SimpleError) GetValue() string {
+	return s.value
+}
+
 func (s SimpleError) Marshal() string {
 	var b strings.Builder
 	b.WriteString(IDENTIFER_SIMPLE_ERROR)
-	b.WriteString(s.Value)
+	b.WriteString(s.value)
 	b.WriteString(TERMINATOR)
 	return b.String()
 }
 
 type Integer struct {
-	Value int64
+	value int64
+}
+
+func (s Integer) GetValue() int64 {
+	return s.value
 }
 
 func NewInteger(s string) (*Integer, error) {
@@ -81,25 +94,29 @@ func NewInteger(s string) (*Integer, error) {
 func (i Integer) Marshal() string {
 	var b strings.Builder
 	b.WriteString(IDENTIFER_INTEGER)
-	b.WriteString(strconv.FormatInt(i.Value, 10))
+	b.WriteString(strconv.FormatInt(i.value, 10))
 	b.WriteString(TERMINATOR)
 	return b.String()
 }
 
 type BulkString struct {
-	Value string
+	value string
 }
 
 func NewBulkString(s string) (*BulkString, error) {
 	return &BulkString{s}, nil
 }
 
+func (s BulkString) GetValue() string {
+	return s.value
+}
+
 func (s BulkString) Marshal() string {
 	var b strings.Builder
 	b.WriteString(IDENTIFER_BULK_STRING)
-	b.WriteString(strconv.FormatInt(int64(len(s.Value)), 10))
+	b.WriteString(strconv.FormatInt(int64(len(s.value)), 10))
 	b.WriteString(TERMINATOR)
-	b.WriteString(s.Value)
+	b.WriteString(s.value)
 	b.WriteString(TERMINATOR)
 	return b.String()
 }
@@ -112,4 +129,12 @@ func hasInvalidCharacters(s string) bool {
 	}
 
 	return false
+}
+
+type Array struct {
+	Values []CashewValue
+}
+
+func NewArray(values []CashewValue) (*Array, error) {
+	return &Array{values}, nil
 }
