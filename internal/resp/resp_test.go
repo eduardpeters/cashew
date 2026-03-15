@@ -276,6 +276,26 @@ func TestNewArray(t *testing.T) {
 		{"single simple string", []resp.CashewValue{
 			mustNewSimpleString(t, "hello"),
 		}},
+		{"multiple simple string", []resp.CashewValue{
+			mustNewSimpleString(t, "hello"),
+			mustNewSimpleString(t, "world"),
+		}},
+		{"single integer", []resp.CashewValue{
+			mustNewInteger(t, "6379"),
+		}},
+		{"multiple integers", []resp.CashewValue{
+			mustNewInteger(t, "1234"),
+			mustNewInteger(t, "4321"),
+			mustNewInteger(t, "56789"),
+		}},
+		{"single bulk string", []resp.CashewValue{
+			mustNewBulkString(t, "hello"),
+		}},
+		{"multiple bulk strings", []resp.CashewValue{
+			mustNewBulkString(t, "set"),
+			mustNewBulkString(t, "key"),
+			mustNewBulkString(t, "value"),
+		}},
 	}
 
 	for _, tt := range tests {
@@ -307,11 +327,77 @@ func TestNewArray(t *testing.T) {
 	}
 }
 
+func TestMarshalArray(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []resp.CashewValue
+		expected string
+	}{
+		{"empty", []resp.CashewValue{}, "*0\r\n"},
+		{"single simple string", []resp.CashewValue{
+			mustNewSimpleString(t, "hello"),
+		}, "*1\r\n+hello\r\n"},
+		{"multiple simple string", []resp.CashewValue{
+			mustNewSimpleString(t, "hello"),
+			mustNewSimpleString(t, "world"),
+		}, "*2\r\n+hello\r\n+world\r\n"},
+		{"single integer", []resp.CashewValue{
+			mustNewInteger(t, "6379"),
+		}, "*1\r\n:6379\r\n"},
+		{"multiple integers", []resp.CashewValue{
+			mustNewInteger(t, "1234"),
+			mustNewInteger(t, "4321"),
+			mustNewInteger(t, "56789"),
+		}, "*3\r\n:1234\r\n:4321\r\n:56789\r\n"},
+		{"single bulk string", []resp.CashewValue{
+			mustNewBulkString(t, "hello"),
+		}, "*1\r\n$5\r\nhello\r\n"},
+		{"multiple bulk strings", []resp.CashewValue{
+			mustNewBulkString(t, "set"),
+			mustNewBulkString(t, "key"),
+			mustNewBulkString(t, "value"),
+		}, "*3\r\n$3\r\nset\r\n$3\r\nkey\r\n$5\r\nvalue\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			value, err := resp.NewArray(tt.input)
+
+			if err != nil {
+				t.Errorf("Unexpected error %v", err)
+			}
+
+			got := value.Marshal()
+			if got != tt.expected {
+				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
 func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
 	t.Helper()
 	v, err := resp.NewSimpleString(s)
 	if err != nil {
 		t.Fatalf("NewSimpleString(%q): %v", s, err)
+	}
+	return v
+}
+
+func mustNewInteger(t testing.TB, s string) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewInteger(s)
+	if err != nil {
+		t.Fatalf("NewInteger(%q): %v", s, err)
+	}
+	return v
+}
+
+func mustNewBulkString(t testing.TB, s string) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewBulkString(s)
+	if err != nil {
+		t.Fatalf("NewBulkString(%q): %v", s, err)
 	}
 	return v
 }

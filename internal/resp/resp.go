@@ -8,11 +8,12 @@ import (
 
 // VALUE TYPE IDENTIFIERS
 const (
-	IDENTIFER_SIMPLE_ERROR  = "-"
-	IDENTIFER_INTEGER       = ":"
-	IDENTIFER_SIMPLE_STRING = "+"
-	IDENTIFER_BULK_STRING   = "$"
-	TERMINATOR              = "\r\n"
+	IDENTIFIER_SIMPLE_ERROR  = "-"
+	IDENTIFIER_INTEGER       = ":"
+	IDENTIFIER_SIMPLE_STRING = "+"
+	IDENTIFIER_BULK_STRING   = "$"
+	IDENTIFIER_ARRAY         = "*"
+	TERMINATOR               = "\r\n"
 )
 
 // ERRORS
@@ -45,7 +46,7 @@ func (s SimpleString) GetValue() any {
 
 func (s SimpleString) Marshal() string {
 	var b strings.Builder
-	b.WriteString(IDENTIFER_SIMPLE_STRING)
+	b.WriteString(IDENTIFIER_SIMPLE_STRING)
 	b.WriteString(s.value)
 	b.WriteString(TERMINATOR)
 	return b.String()
@@ -69,7 +70,7 @@ func (s SimpleError) GetValue() any {
 
 func (s SimpleError) Marshal() string {
 	var b strings.Builder
-	b.WriteString(IDENTIFER_SIMPLE_ERROR)
+	b.WriteString(IDENTIFIER_SIMPLE_ERROR)
 	b.WriteString(s.value)
 	b.WriteString(TERMINATOR)
 	return b.String()
@@ -93,7 +94,7 @@ func NewInteger(s string) (*Integer, error) {
 
 func (i Integer) Marshal() string {
 	var b strings.Builder
-	b.WriteString(IDENTIFER_INTEGER)
+	b.WriteString(IDENTIFIER_INTEGER)
 	b.WriteString(strconv.FormatInt(i.value, 10))
 	b.WriteString(TERMINATOR)
 	return b.String()
@@ -113,7 +114,7 @@ func (s BulkString) GetValue() any {
 
 func (s BulkString) Marshal() string {
 	var b strings.Builder
-	b.WriteString(IDENTIFER_BULK_STRING)
+	b.WriteString(IDENTIFIER_BULK_STRING)
 	b.WriteString(strconv.FormatInt(int64(len(s.value)), 10))
 	b.WriteString(TERMINATOR)
 	b.WriteString(s.value)
@@ -141,4 +142,16 @@ func NewArray(values []CashewValue) (*Array, error) {
 
 func (a Array) GetValue() any {
 	return a.values
+}
+
+func (a Array) Marshal() string {
+	var b strings.Builder
+	b.WriteString(IDENTIFIER_ARRAY)
+	b.WriteString(strconv.FormatInt(int64(len(a.values)), 10))
+	b.WriteString(TERMINATOR)
+	// Each element in the sequence adds its own termination
+	for _, value := range a.values {
+		b.WriteString(value.Marshal())
+	}
+	return b.String()
 }
