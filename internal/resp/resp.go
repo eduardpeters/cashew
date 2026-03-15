@@ -205,75 +205,62 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 }
 
 func unmarshalSimpleString(b *bufio.Reader) (SimpleString, error) {
-	identifier, err := b.ReadByte()
+	identifier, err := readIdentifier(b)
 	if err != nil {
 		return SimpleString{}, err
 	}
-	if string(identifier) != IDENTIFIER_SIMPLE_STRING {
-		return SimpleString{}, fmt.Errorf("invalid data type identifier for simple string: %s", string(identifier))
+	if identifier != IDENTIFIER_SIMPLE_STRING {
+		return SimpleString{}, fmt.Errorf("invalid data type identifier for simple string: %s", identifier)
 	}
 
-	data, err := b.ReadString('\n')
+	s, err := readUntilTerminator(b)
 	if err != nil {
 		return SimpleString{}, err
-	}
-	s, found := strings.CutSuffix(data, "\r\n")
-	if !found {
-		return SimpleString{}, INVALID_TERMINATION_SEQUENCE
 	}
 
 	return NewSimpleString(s)
 }
 
 func unmarshalSimpleError(b *bufio.Reader) (SimpleError, error) {
-	identifier, err := b.ReadByte()
+	identifier, err := readIdentifier(b)
 	if err != nil {
 		return SimpleError{}, err
 	}
-	if string(identifier) != IDENTIFIER_SIMPLE_ERROR {
-		return SimpleError{}, fmt.Errorf("invalid data type identifier for simple error: %s", string(identifier))
+	if identifier != IDENTIFIER_SIMPLE_ERROR {
+		return SimpleError{}, fmt.Errorf("invalid data type identifier for simple error: %s", identifier)
 	}
 
-	data, err := b.ReadString('\n')
+	s, err := readUntilTerminator(b)
 	if err != nil {
 		return SimpleError{}, err
-	}
-	s, found := strings.CutSuffix(data, "\r\n")
-	if !found {
-		return SimpleError{}, INVALID_TERMINATION_SEQUENCE
 	}
 
 	return NewSimpleError(s)
 }
 
 func unmarshalInteger(b *bufio.Reader) (Integer, error) {
-	identifier, err := b.ReadByte()
+	identifier, err := readIdentifier(b)
 	if err != nil {
 		return Integer{}, err
 	}
-	if string(identifier) != IDENTIFIER_INTEGER {
-		return Integer{}, fmt.Errorf("invalid data type identifier for integer: %s", string(identifier))
+	if identifier != IDENTIFIER_INTEGER {
+		return Integer{}, fmt.Errorf("invalid data type identifier for integer: %s", identifier)
 	}
 
-	data, err := b.ReadString('\n')
+	s, err := readUntilTerminator(b)
 	if err != nil {
 		return Integer{}, err
-	}
-	s, found := strings.CutSuffix(data, TERMINATOR)
-	if !found {
-		return Integer{}, INVALID_TERMINATION_SEQUENCE
 	}
 
 	return NewInteger(s)
 }
 
 func unmarshalNull(b *bufio.Reader) (Null, error) {
-	identifier, err := b.ReadByte()
+	identifier, err := readIdentifier(b)
 	if err != nil {
 		return Null{}, err
 	}
-	identifierAsString := string(identifier)
-	if identifierAsString != IDENTIFIER_NULL && identifierAsString != IDENTIFIER_ARRAY && identifierAsString != IDENTIFIER_BULK_STRING {
+	if identifier != IDENTIFIER_NULL && identifier != IDENTIFIER_ARRAY && identifier != IDENTIFIER_BULK_STRING {
 		return Null{}, fmt.Errorf("invalid data type identifier for null: %s", string(identifier))
 	}
 
@@ -282,7 +269,7 @@ func unmarshalNull(b *bufio.Reader) (Null, error) {
 		return Null{}, err
 	}
 
-	if identifierAsString == IDENTIFIER_NULL {
+	if identifier == IDENTIFIER_NULL {
 		return Null{}, nil
 	}
 
@@ -292,6 +279,14 @@ func unmarshalNull(b *bufio.Reader) (Null, error) {
 	}
 
 	return Null{}, nil
+}
+
+func readIdentifier(b *bufio.Reader) (string, error) {
+	identifier, err := b.ReadByte()
+	if err != nil {
+		return "", err
+	}
+	return string(identifier), nil
 }
 
 func readUntilTerminator(b *bufio.Reader) (string, error) {
