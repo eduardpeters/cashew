@@ -43,7 +43,10 @@ func (n Null) GetValue() any {
 }
 
 func (n Null) Marshal() string {
-	return ""
+	var b strings.Builder
+	b.WriteString(IDENTIFIER_NULL)
+	b.WriteString(TERMINATOR)
+	return b.String()
 }
 
 type SimpleString struct {

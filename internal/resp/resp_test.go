@@ -8,6 +8,29 @@ import (
 	"github.com/eduardpeters/cashew/internal/resp"
 )
 
+func TestNewNull(t *testing.T) {
+	got, err := resp.NewNull()
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+	if got.GetValue() != nil {
+		t.Errorf("want nil, got %v", got.GetValue())
+	}
+}
+
+func TestMarshalNull(t *testing.T) {
+	value, err := resp.NewNull()
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	got := value.Marshal()
+	want := "_\r\n"
+	if got != want {
+		t.Errorf("want %q - got %q", want, got)
+	}
+}
+
 func TestNewSimpleString(t *testing.T) {
 	input := "OK"
 
