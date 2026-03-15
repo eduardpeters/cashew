@@ -513,6 +513,40 @@ func TestUnmarshalSimpleErrors(t *testing.T) {
 	}
 }
 
+func TestUnmarshalIntegers(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{"zero", ":0\r\n", 0},
+		{"positive one", ":+1\r\n", 1},
+		{"negative one", ":-1\r\n", -1},
+		{"positive multiple digits", ":5432\r\n", 5432},
+		{"negative multiple digits", ":-42\r\n", -42},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			v, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			value, ok := v.(resp.Integer)
+			if !ok {
+				t.Fatalf("value not Integer")
+			}
+
+			got := value.GetValue()
+			if got != tt.expected {
+				t.Errorf("want %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
 func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
 	t.Helper()
 	v, err := resp.NewSimpleString(s)

@@ -191,6 +191,8 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 		return unmarshalSimpleString(b)
 	case IDENTIFIER_SIMPLE_ERROR:
 		return unmarshalSimpleError(b)
+	case IDENTIFIER_INTEGER:
+		return unmarshalInteger(b)
 	case IDENTIFIER_NULL:
 		return Null{}, nil
 	case IDENTIFIER_ARRAY:
@@ -208,8 +210,9 @@ func unmarshalSimpleString(b *bufio.Reader) (SimpleString, error) {
 		return SimpleString{}, err
 	}
 	if string(identifier) != IDENTIFIER_SIMPLE_STRING {
-		return SimpleString{}, fmt.Errorf("invalid data type indenfier for simple string: %s", string(identifier))
+		return SimpleString{}, fmt.Errorf("invalid data type identifier for simple string: %s", string(identifier))
 	}
+
 	data, err := b.ReadString('\n')
 	if err != nil {
 		return SimpleString{}, err
@@ -228,8 +231,9 @@ func unmarshalSimpleError(b *bufio.Reader) (SimpleError, error) {
 		return SimpleError{}, err
 	}
 	if string(identifier) != IDENTIFIER_SIMPLE_ERROR {
-		return SimpleError{}, fmt.Errorf("invalid data type indenfier for simple error: %s", string(identifier))
+		return SimpleError{}, fmt.Errorf("invalid data type identifier for simple error: %s", string(identifier))
 	}
+
 	data, err := b.ReadString('\n')
 	if err != nil {
 		return SimpleError{}, err
@@ -240,4 +244,25 @@ func unmarshalSimpleError(b *bufio.Reader) (SimpleError, error) {
 	}
 
 	return NewSimpleError(s)
+}
+
+func unmarshalInteger(b *bufio.Reader) (Integer, error) {
+	identifier, err := b.ReadByte()
+	if err != nil {
+		return Integer{}, err
+	}
+	if string(identifier) != IDENTIFIER_INTEGER {
+		return Integer{}, fmt.Errorf("invalid data type identifier for integer: %s", string(identifier))
+	}
+
+	data, err := b.ReadString('\n')
+	if err != nil {
+		return Integer{}, err
+	}
+	s, found := strings.CutSuffix(data, TERMINATOR)
+	if !found {
+		return Integer{}, INVALID_TERMINATION_SEQUENCE
+	}
+
+	return NewInteger(s)
 }
