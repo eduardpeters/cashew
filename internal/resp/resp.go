@@ -79,12 +79,12 @@ type SimpleError struct {
 	value string
 }
 
-func NewSimpleError(s string) (*SimpleError, error) {
+func NewSimpleError(s string) (SimpleError, error) {
 	if hasInvalidCharacters(s) {
-		return nil, INVALID_CHARACTERS_ERROR
+		return SimpleError{}, INVALID_CHARACTERS_ERROR
 	}
 
-	return &SimpleError{s}, nil
+	return SimpleError{s}, nil
 }
 
 func (s SimpleError) GetValue() any {
@@ -99,6 +99,16 @@ func (s SimpleError) Marshal() string {
 	return b.String()
 }
 
+func hasInvalidCharacters(s string) bool {
+	for _, rune := range s {
+		if rune == '\r' || rune == '\n' {
+			return true
+		}
+	}
+
+	return false
+}
+
 type Integer struct {
 	value int64
 }
@@ -107,12 +117,12 @@ func (s Integer) GetValue() any {
 	return s.value
 }
 
-func NewInteger(s string) (*Integer, error) {
+func NewInteger(s string) (Integer, error) {
 	n, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		return nil, INVALID_INTEGER_ERROR
+		return Integer{}, INVALID_INTEGER_ERROR
 	}
-	return &Integer{n}, nil
+	return Integer{n}, nil
 }
 
 func (i Integer) Marshal() string {
@@ -127,8 +137,8 @@ type BulkString struct {
 	value string
 }
 
-func NewBulkString(s string) (*BulkString, error) {
-	return &BulkString{s}, nil
+func NewBulkString(s string) (BulkString, error) {
+	return BulkString{s}, nil
 }
 
 func (s BulkString) GetValue() any {
@@ -145,22 +155,12 @@ func (s BulkString) Marshal() string {
 	return b.String()
 }
 
-func hasInvalidCharacters(s string) bool {
-	for _, rune := range s {
-		if rune == '\r' || rune == '\n' {
-			return true
-		}
-	}
-
-	return false
-}
-
 type Array struct {
 	values []CashewValue
 }
 
-func NewArray(values []CashewValue) (*Array, error) {
-	return &Array{values}, nil
+func NewArray(values []CashewValue) (Array, error) {
+	return Array{values}, nil
 }
 
 func (a Array) GetValue() any {
