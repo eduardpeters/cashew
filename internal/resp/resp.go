@@ -21,8 +21,9 @@ const (
 
 // ERRORS
 var (
-	INVALID_CHARACTERS_ERROR = errors.New("illegal character present: '\\r' or '\\n'")
-	INVALID_INTEGER_ERROR    = errors.New("input is not an integer")
+	INVALID_CHARACTERS_ERROR     = errors.New("illegal character present: '\\r' or '\\n'")
+	INVALID_INTEGER_ERROR        = errors.New("input is not an integer")
+	INVALID_TERMINATION_SEQUENCE = errors.New("input not terminated by '\\r\\n'")
 )
 
 type CashewValue interface {
@@ -53,13 +54,13 @@ type SimpleString struct {
 	value string
 }
 
-func NewSimpleString(s string) (*SimpleString, error) {
+func NewSimpleString(s string) (SimpleString, error) {
 	for _, rune := range s {
 		if rune == '\r' || rune == '\n' {
-			return nil, INVALID_CHARACTERS_ERROR
+			return SimpleString{}, INVALID_CHARACTERS_ERROR
 		}
 	}
-	return &SimpleString{s}, nil
+	return SimpleString{s}, nil
 }
 
 func (s SimpleString) GetValue() any {
@@ -186,6 +187,8 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 		return nil, err
 	}
 	switch string(identifier) {
+	case IDENTIFIER_SIMPLE_STRING:
+		return marshalSimpleString(b)
 	case IDENTIFIER_NULL:
 		return Null{}, nil
 	case IDENTIFIER_ARRAY:
@@ -195,4 +198,24 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 	default:
 		return nil, fmt.Errorf("invalid data type identifier %s", identifier)
 	}
+}
+
+func marshalSimpleString(b *bufio.Reader) (SimpleString, error) {
+	identifier, err := b.ReadByte()
+	if err != nil {
+		return SimpleString{}, err
+	}
+	if string(identifier) != IDENTIFIER_SIMPLE_STRING {
+		return SimpleString{}, fmt.Errorf("invalid data type indenfier for simple string: %s", string(identifier))
+	}
+	data, err := b.ReadString('\n')
+	if err != nil {
+		return SimpleString{}, err
+	}
+	s, found := strings.CutSuffix(data, "\r\n")
+	if !found {
+		return SimpleString{}, INVALID_TERMINATION_SEQUENCE
+	}
+
+	return NewSimpleString(s)
 }

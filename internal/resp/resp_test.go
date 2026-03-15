@@ -426,6 +426,37 @@ func TestUnmarshalNull(t *testing.T) {
 	}
 }
 
+func TestUnmarshalSimpleString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"no whitespace", "+hello\r\n", "hello"},
+		{"whitespace", "+hello world\r\n", "hello world"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			v, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			value, ok := v.(resp.SimpleString)
+			if !ok {
+				t.Fatalf("value not Simple String")
+			}
+
+			got := value.GetValue()
+			if got != tt.expected {
+				t.Errorf("want %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
 func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
 	t.Helper()
 	v, err := resp.NewSimpleString(s)
