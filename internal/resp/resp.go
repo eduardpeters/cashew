@@ -194,11 +194,11 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 	case IDENTIFIER_INTEGER:
 		return unmarshalInteger(b)
 	case IDENTIFIER_NULL:
-		return Null{}, nil
+		return unmarshalNull(b)
 	case IDENTIFIER_ARRAY:
-		return Null{}, nil
+		return unmarshalNull(b)
 	case IDENTIFIER_BULK_STRING:
-		return Null{}, nil
+		return unmarshalNull(b)
 	default:
 		return nil, fmt.Errorf("invalid data type identifier %s", identifier)
 	}
@@ -265,4 +265,45 @@ func unmarshalInteger(b *bufio.Reader) (Integer, error) {
 	}
 
 	return NewInteger(s)
+}
+
+func unmarshalNull(b *bufio.Reader) (Null, error) {
+	identifier, err := b.ReadByte()
+	if err != nil {
+		return Null{}, err
+	}
+	identifierAsString := string(identifier)
+	if identifierAsString != IDENTIFIER_NULL && identifierAsString != IDENTIFIER_ARRAY && identifierAsString != IDENTIFIER_BULK_STRING {
+		return Null{}, fmt.Errorf("invalid data type identifier for null: %s", string(identifier))
+	}
+
+	s, err := readUntilTerminator(b)
+	if err != nil {
+		return Null{}, err
+	}
+
+	if identifierAsString == IDENTIFIER_NULL {
+		return Null{}, nil
+	}
+
+	s, found := strings.CutPrefix(s, "-1")
+	if !found {
+		return Null{}, fmt.Errorf("invalid null sequence for array or bulk string: %s", s)
+	}
+
+	return Null{}, nil
+}
+
+func readUntilTerminator(b *bufio.Reader) (string, error) {
+	data, err := b.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+
+	s, found := strings.CutSuffix(data, TERMINATOR)
+	if !found {
+		return "", INVALID_TERMINATION_SEQUENCE
+	}
+
+	return s, nil
 }
