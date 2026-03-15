@@ -1,6 +1,8 @@
 package resp_test
 
 import (
+	"bufio"
+	"strings"
 	"testing"
 
 	"github.com/eduardpeters/cashew/internal/resp"
@@ -12,7 +14,7 @@ func TestNewSimpleString(t *testing.T) {
 	got, err := resp.NewSimpleString(input)
 
 	if err != nil {
-		t.Errorf("Unexpected error %v", err)
+		t.Fatalf("Unexpected error %v", err)
 	}
 
 	if got.GetValue() != input {
@@ -57,7 +59,7 @@ func TestMarshalSimpleStrings(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			value, err := resp.NewSimpleString(tt.input)
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 			got := value.Marshal()
 			if got != tt.expected {
@@ -73,7 +75,7 @@ func TestNewSimpleError(t *testing.T) {
 	got, err := resp.NewSimpleError(input)
 
 	if err != nil {
-		t.Errorf("Unexpected error %v", err)
+		t.Fatalf("Unexpected error %v", err)
 	}
 
 	if got.GetValue() != input {
@@ -118,7 +120,7 @@ func TestMarshalSimpleErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			value, err := resp.NewSimpleError(tt.input)
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 			got := value.Marshal()
 			if got != tt.expected {
@@ -149,7 +151,7 @@ func TestNewInteger(t *testing.T) {
 			got, err := resp.NewInteger(tt.input)
 
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 
 			if got.GetValue() != tt.expected {
@@ -201,7 +203,7 @@ func TestMarshalIntegers(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			value, err := resp.NewInteger(tt.input)
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 			got := value.Marshal()
 			if got != tt.expected {
@@ -228,7 +230,7 @@ func TestNewBulkString(t *testing.T) {
 			got, err := resp.NewBulkString(tt.input)
 
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 
 			if got.GetValue() != tt.input {
@@ -256,7 +258,7 @@ func TestMarshalBulkString(t *testing.T) {
 			value, err := resp.NewBulkString(tt.input)
 
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 
 			got := value.Marshal()
@@ -364,12 +366,38 @@ func TestMarshalArray(t *testing.T) {
 			value, err := resp.NewArray(tt.input)
 
 			if err != nil {
-				t.Errorf("Unexpected error %v", err)
+				t.Fatalf("Unexpected error %v", err)
 			}
 
 			got := value.Marshal()
 			if got != tt.expected {
 				t.Errorf("want %q - got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestUnmarshalNull(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"Null array", "*-1\r\n"},
+		{"Null bulk string", "$-1\r\n"},
+		{"Null value", "_\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			value, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			got := value.GetValue()
+			if got != nil {
+				t.Errorf("want nil, got %v", got)
 			}
 		})
 	}

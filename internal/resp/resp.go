@@ -1,7 +1,9 @@
 package resp
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -13,6 +15,7 @@ const (
 	IDENTIFIER_SIMPLE_STRING = "+"
 	IDENTIFIER_BULK_STRING   = "$"
 	IDENTIFIER_ARRAY         = "*"
+	IDENTIFIER_NULL          = "_"
 	TERMINATOR               = "\r\n"
 )
 
@@ -25,6 +28,22 @@ var (
 type CashewValue interface {
 	GetValue() any
 	Marshal() string
+}
+
+type Null struct {
+	value any
+}
+
+func NewNull() (*Null, error) {
+	return &Null{}, nil
+}
+
+func (n Null) GetValue() any {
+	return n.value
+}
+
+func (n Null) Marshal() string {
+	return ""
 }
 
 type SimpleString struct {
@@ -154,4 +173,23 @@ func (a Array) Marshal() string {
 		b.WriteString(value.Marshal())
 	}
 	return b.String()
+}
+
+// UNMARSHAL
+
+func Unmarshal(b *bufio.Reader) (CashewValue, error) {
+	identifier, err := b.Peek(1)
+	if err != nil {
+		return nil, err
+	}
+	switch string(identifier) {
+	case IDENTIFIER_NULL:
+		return Null{}, nil
+	case IDENTIFIER_ARRAY:
+		return Null{}, nil
+	case IDENTIFIER_BULK_STRING:
+		return Null{}, nil
+	default:
+		return nil, fmt.Errorf("invalid data type identifier %s", identifier)
+	}
 }
