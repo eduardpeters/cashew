@@ -426,6 +426,31 @@ func TestUnmarshalNull(t *testing.T) {
 	}
 }
 
+func TestUnmarshalErrors(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"missing identifier", "hello\r\n"},
+		{"invalid identifier", "@hello\r\n"},
+		{"unterminated", "+hello"},
+		{"only LF", "+hello world\n"},
+		{"only CR", "+hello world\r"},
+		{"invalid CR in simple string", "+hello\rworld\r\n"},
+		{"invalid LF in simple string", "+hello\nworld\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			_, err := resp.Unmarshal(bufio.NewReader(r))
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
+			}
+		})
+	}
+}
+
 func TestUnmarshalSimpleString(t *testing.T) {
 	tests := []struct {
 		name     string
