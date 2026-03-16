@@ -198,11 +198,11 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 	case IDENTIFIER_ARRAY:
 		return unmarshalNull(b)
 	case IDENTIFIER_BULK_STRING:
-		sequence, err := b.Peek(2)
+		isPossibleNull, err := checkIsPossibleNullSequence(b)
 		if err != nil {
 			return nil, err
 		}
-		if string(sequence) == "$-" {
+		if isPossibleNull {
 			return unmarshalNull(b)
 		}
 		return unmarshalBulkString(b)
@@ -328,6 +328,17 @@ func unmarshalBulkString(b *bufio.Reader) (BulkString, error) {
 	}
 
 	return BulkString{sb.String()}, err
+}
+
+func checkIsPossibleNullSequence(b *bufio.Reader) (bool, error) {
+	sequence, err := b.Peek(2)
+	if err != nil {
+		return false, err
+	}
+	if string(sequence) == "$-" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func readIdentifier(b *bufio.Reader) (string, error) {
