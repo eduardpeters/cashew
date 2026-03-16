@@ -459,8 +459,6 @@ func TestUnmarshalInvalidNull(t *testing.T) {
 		name  string
 		input string
 	}{
-		{"Empty array", "*0\r\n"},
-		{"Empty bulk string", "$0\r\n"},
 		{"Not -1 array", "*-2\r\n"},
 		{"Not -1 bulk string", "$-2\r\n"},
 	}
@@ -567,6 +565,66 @@ func TestUnmarshalIntegers(t *testing.T) {
 			got := value.GetValue()
 			if got != tt.expected {
 				t.Errorf("want %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestUnmarshalBulkString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"empty", "$0\r\n\r\n", ""},
+		{"one character", "$1\r\na\r\n", "a"},
+		{"no whitespace", "$5\r\nhello\r\n", "hello"},
+		{"with whitespace", "$11\r\nhello world\r\n", "hello world"},
+		{"with LF", "$11\r\nhello\nworld\r\n", "hello\nworld"},
+		{"with CR", "$11\r\nhello\rworld\r\n", "hello\rworld"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			v, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			value, ok := v.(resp.BulkString)
+			if !ok {
+				t.Fatalf("value not BulkString")
+			}
+
+			got := value.GetValue()
+			if got != tt.expected {
+				t.Errorf("want %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestUnmarshalInvalidBulkString(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"empty without terminator sequence", "$0\r\n"},
+		{"without terminator sequence", "$11\r\nhello world"},
+		{"longer data than length declared", "$1\r\nabc\r\n"},
+		{"shorter data than length declared", "$5\r\nhey\r\n"},
+		{"negative length", "$-5\r\nhello\r\n"},
+		{"length as string", "$two\r\nhi\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			_, err := resp.Unmarshal(bufio.NewReader(r))
+			t.Log(err)
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
 		})
 	}

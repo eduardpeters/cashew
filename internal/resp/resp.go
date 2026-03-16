@@ -198,7 +198,14 @@ func Unmarshal(b *bufio.Reader) (CashewValue, error) {
 	case IDENTIFIER_ARRAY:
 		return unmarshalNull(b)
 	case IDENTIFIER_BULK_STRING:
-		return unmarshalNull(b)
+		sequence, err := b.Peek(2)
+		if err != nil {
+			return nil, err
+		}
+		if string(sequence) == "$-" {
+			return unmarshalNull(b)
+		}
+		return unmarshalBulkString(b)
 	default:
 		return nil, fmt.Errorf("invalid data type identifier %s", identifier)
 	}
@@ -279,6 +286,48 @@ func unmarshalNull(b *bufio.Reader) (Null, error) {
 	}
 
 	return Null{}, nil
+}
+
+func unmarshalBulkString(b *bufio.Reader) (BulkString, error) {
+	identifier, err := readIdentifier(b)
+	if err != nil {
+		return BulkString{}, err
+	}
+	if identifier != IDENTIFIER_BULK_STRING {
+		return BulkString{}, fmt.Errorf("invalid data type identifier for bulk string: %s", identifier)
+	}
+
+	length, err := readUntilTerminator(b)
+	if err != nil {
+		return BulkString{}, err
+	}
+	lengthToRead, err := strconv.Atoi(length)
+	if err != nil {
+		return BulkString{}, fmt.Errorf("invalid bulk string length: %s", length)
+	}
+
+	var sb strings.Builder
+	for range lengthToRead {
+		data, err := b.ReadByte()
+		if err != nil {
+			return BulkString{}, err
+		}
+		sb.WriteByte(data)
+	}
+	// Read two bytes to confirm termination sequence at the end
+	terminationSequence := [2]byte{}
+	for i := range len(terminationSequence) {
+		read, err := b.ReadByte()
+		if err != nil {
+			return BulkString{}, err
+		}
+		terminationSequence[i] = read
+	}
+	if string(terminationSequence[:]) != TERMINATOR {
+		return BulkString{}, fmt.Errorf("termination sequence not found after data, found: %q", string(terminationSequence[:]))
+	}
+
+	return BulkString{sb.String()}, err
 }
 
 func readIdentifier(b *bufio.Reader) (string, error) {
