@@ -630,6 +630,53 @@ func TestUnmarshalInvalidBulkString(t *testing.T) {
 	}
 }
 
+func TestUnmarshalArray(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []resp.CashewValue
+	}{
+		{"empty", "*0\r\n\r\n", []resp.CashewValue{}},
+		{"one simple string", "*1\r\n+hello\r\n", []resp.CashewValue{mustNewSimpleString(t, "hello")}},
+		{"multiple simple strings", "*3\r\n+hello\r\n+world\r\n+!\r\n", []resp.CashewValue{
+			mustNewSimpleString(t, "hello"),
+			mustNewSimpleString(t, "world"),
+			mustNewSimpleString(t, "!"),
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			v, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			value, ok := v.(resp.Array)
+			if !ok {
+				t.Fatal("value not Array")
+			}
+
+			arrayValue := value.GetValue()
+			elements, ok := arrayValue.([]resp.CashewValue)
+			if !ok {
+				t.Fatal("internal values not CashewValue")
+			}
+			if len(elements) != len(tt.expected) {
+				t.Fatalf("incorrect length for array: want %d - got %d", len(tt.expected), len(elements))
+			}
+			for i, e := range elements {
+				want := tt.expected[i].GetValue()
+				got := e.GetValue()
+				if got != want {
+					t.Errorf("want %q, got %q", want, got)
+				}
+			}
+		})
+	}
+}
+
 func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
 	t.Helper()
 	v, err := resp.NewSimpleString(s)
