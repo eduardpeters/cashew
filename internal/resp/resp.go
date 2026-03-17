@@ -309,7 +309,7 @@ func unmarshalBulkString(b *bufio.Reader) (BulkString, error) {
 		return BulkString{}, err
 	}
 	lengthToRead, err := strconv.Atoi(length)
-	if err != nil {
+	if err != nil || lengthToRead < 0 {
 		return BulkString{}, fmt.Errorf("invalid bulk string length: %s", length)
 	}
 
@@ -338,7 +338,33 @@ func unmarshalBulkString(b *bufio.Reader) (BulkString, error) {
 }
 
 func unmarshalArray(b *bufio.Reader) (Array, error) {
-	return Array{}, nil
+	identifier, err := readIdentifier(b)
+	if err != nil {
+		return Array{}, err
+	}
+	if identifier != IDENTIFIER_ARRAY {
+		return Array{}, fmt.Errorf("invalid data type identifier for array: %s", identifier)
+	}
+
+	length, err := readUntilTerminator(b)
+	if err != nil {
+		return Array{}, err
+	}
+	elementCount, err := strconv.Atoi(length)
+	if err != nil || elementCount < 0 {
+		return Array{}, fmt.Errorf("invalid array length: %s", length)
+	}
+
+	var values []CashewValue
+	for range elementCount {
+		element, err := Unmarshal(b)
+		if err != nil {
+			return Array{}, err
+		}
+		values = append(values, element)
+	}
+
+	return Array{values}, nil
 }
 
 func checkIsPossibleNullSequence(b *bufio.Reader) (bool, error) {

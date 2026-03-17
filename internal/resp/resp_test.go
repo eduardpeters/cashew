@@ -622,7 +622,6 @@ func TestUnmarshalInvalidBulkString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := strings.NewReader(tt.input)
 			_, err := resp.Unmarshal(bufio.NewReader(r))
-			t.Log(err)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
@@ -636,13 +635,46 @@ func TestUnmarshalArray(t *testing.T) {
 		input    string
 		expected []resp.CashewValue
 	}{
-		{"empty", "*0\r\n\r\n", []resp.CashewValue{}},
-		{"one simple string", "*1\r\n+hello\r\n", []resp.CashewValue{mustNewSimpleString(t, "hello")}},
-		{"multiple simple strings", "*3\r\n+hello\r\n+world\r\n+!\r\n", []resp.CashewValue{
+		{"empty", "*0\r\n", []resp.CashewValue{}},
+		{"single simple string", "*1\r\n+hello\r\n", []resp.CashewValue{mustNewSimpleString(t, "hello")}},
+		{"multiple simple strings", "*2\r\n+hello\r\n+world\r\n", []resp.CashewValue{
 			mustNewSimpleString(t, "hello"),
 			mustNewSimpleString(t, "world"),
-			mustNewSimpleString(t, "!"),
 		}},
+		{"single integer",
+			"*1\r\n:6379\r\n",
+			[]resp.CashewValue{
+				mustNewInteger(t, "6379"),
+			},
+		},
+		{"multiple integers",
+			"*3\r\n:1234\r\n:4321\r\n:56789\r\n",
+			[]resp.CashewValue{
+				mustNewInteger(t, "1234"),
+				mustNewInteger(t, "4321"),
+				mustNewInteger(t, "56789"),
+			},
+		},
+		{"single bulk string",
+			"*1\r\n$5\r\nhello\r\n",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "hello"),
+			},
+		},
+		{"multiple bulk strings",
+			"*3\r\n$3\r\nset\r\n$3\r\nkey\r\n$5\r\nvalue\r\n",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "set"),
+				mustNewBulkString(t, "key"),
+				mustNewBulkString(t, "value"),
+			},
+		},
+		{"longer data than length declared only parses declared length",
+			"*1\r\n+abc\r\n+xyz\r\n",
+			[]resp.CashewValue{
+				mustNewSimpleString(t, "abc"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -672,6 +704,30 @@ func TestUnmarshalArray(t *testing.T) {
 				if got != want {
 					t.Errorf("want %q, got %q", want, got)
 				}
+			}
+		})
+	}
+}
+
+func TestUnmarshalInvalidArray(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"empty without terminator sequence", "*0"},
+		{"data without terminator sequence", "*1\r\n+hello world"},
+		{"shorter data than length declared", "*2\r\n+hey\r\n"},
+		{"missing length", "*\r\n+hello\r\n"},
+		{"negative length", "*-5\r\n+hello\r\n"},
+		{"length as string", "*two\r\n+hi\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			_, err := resp.Unmarshal(bufio.NewReader(r))
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
 		})
 	}
