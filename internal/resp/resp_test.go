@@ -435,13 +435,6 @@ func TestUnmarshalInvalidInput(t *testing.T) {
 		{"empty", ""},
 		{"missing identifier", "hello\r\n"},
 		{"invalid identifier", "@hello\r\n"},
-		{"unterminated", "+hello"},
-		{"only LF", "+hello world\n"},
-		{"null only LF", "_\n"},
-		{"null only CR", "_\r"},
-		{"only CR", "+hello world\r"},
-		{"invalid CR in simple string", "+hello\rworld\r\n"},
-		{"invalid LF in simple string", "+hello\nworld\r\n"},
 	}
 
 	for _, tt := range tests {
@@ -488,6 +481,8 @@ func TestUnmarshalInvalidNull(t *testing.T) {
 	}{
 		{"Not -1 array", "*-2\r\n"},
 		{"Not -1 bulk string", "$-2\r\n"},
+		{"null only LF", "_\n"},
+		{"null only CR", "_\r"},
 	}
 
 	for _, tt := range tests {
@@ -527,6 +522,29 @@ func TestUnmarshalSimpleString(t *testing.T) {
 			got := value.GetValue()
 			if got != tt.expected {
 				t.Errorf("want %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestUnmarshalInvalidSimpleString(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"unterminated", "+hello"},
+		{"only LF", "+hello world\n"},
+		{"only CR", "+hello world\r"},
+		{"invalid CR in simple string", "+hello\rworld\r\n"},
+		{"invalid LF in simple string", "+hello\nworld\r\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			_, err := resp.Unmarshal(bufio.NewReader(r))
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
 		})
 	}
