@@ -736,6 +736,87 @@ func TestUnmarshalArray(t *testing.T) {
 	}
 }
 
+func TestUnmarshalNestedArrays(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []resp.CashewValue
+	}{
+		{"simple nested array",
+			"*1\r\n*1\r\n+nested\r\n",
+			[]resp.CashewValue{
+				mustNewArray(
+					t, []resp.CashewValue{mustNewSimpleString(t, "nested")},
+				),
+			},
+		},
+		{"paired nested arrays",
+			"*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n$5\r\nHello\r\n$5\r\nWorld\r\n",
+			[]resp.CashewValue{
+				mustNewArray(
+					t, []resp.CashewValue{
+						mustNewInteger(t, "1"),
+						mustNewInteger(t, "2"),
+						mustNewInteger(t, "3"),
+					},
+				),
+				mustNewArray(
+					t, []resp.CashewValue{
+						mustNewBulkString(t, "Hello"),
+						mustNewBulkString(t, "World"),
+					},
+				),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			v, err := resp.Unmarshal(bufio.NewReader(r))
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			value, ok := v.(resp.Array)
+			if !ok {
+				t.Fatal("value not Array")
+			}
+
+			arrayValue := value.GetValue()
+			topLevelElements, ok := arrayValue.([]resp.CashewValue)
+			if !ok {
+				t.Fatal("internal values not CashewValue")
+			}
+			if len(topLevelElements) != len(tt.expected) {
+				t.Fatalf("incorrect length for array: want %d - got %d", len(tt.expected), len(topLevelElements))
+			}
+			for i, tle := range topLevelElements {
+				got := tle.GetValue()
+				nestedElements, ok := got.([]resp.CashewValue)
+				if !ok {
+					t.Fatal("nested values not CashewValue")
+				}
+				want := tt.expected[i].GetValue()
+				nestedExpected, ok := want.([]resp.CashewValue)
+				if !ok {
+					t.Fatal("nested expected values not CashewValue")
+				}
+				if len(nestedElements) != len(nestedExpected) {
+					t.Fatalf("incorrect length for nested array: want %d - got %d", len(nestedExpected), len(nestedElements))
+				}
+				for i, ne := range nestedElements {
+					expected := nestedExpected[i].GetValue()
+					nested := ne.GetValue()
+					if nested != expected {
+						t.Errorf("want %q, got %q", expected, nested)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestUnmarshalInvalidArray(t *testing.T) {
 	tests := []struct {
 		name  string
