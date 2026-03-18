@@ -382,6 +382,33 @@ func TestMarshalArray(t *testing.T) {
 			mustNewBulkString(t, "key"),
 			mustNewBulkString(t, "value"),
 		}, "*3\r\n$3\r\nset\r\n$3\r\nkey\r\n$5\r\nvalue\r\n"},
+		{"mixed data types", []resp.CashewValue{
+			mustNewSimpleString(t, "numbers"),
+			mustNewInteger(t, "1"),
+			mustNewInteger(t, "2"),
+			mustNewInteger(t, "3"),
+			mustNewBulkString(t, "the end"),
+		}, "*5\r\n+numbers\r\n:1\r\n:2\r\n:3\r\n$7\r\nthe end\r\n"},
+		{"simple nested array", []resp.CashewValue{
+			mustNewArray(
+				t, []resp.CashewValue{mustNewSimpleString(t, "nested")},
+			),
+		}, "*1\r\n*1\r\n+nested\r\n"},
+		{"paired nested arrays", []resp.CashewValue{
+			mustNewArray(
+				t, []resp.CashewValue{
+					mustNewInteger(t, "1"),
+					mustNewInteger(t, "2"),
+					mustNewInteger(t, "3"),
+				},
+			),
+			mustNewArray(
+				t, []resp.CashewValue{
+					mustNewBulkString(t, "Hello"),
+					mustNewBulkString(t, "World"),
+				},
+			),
+		}, "*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n$5\r\nHello\r\n$5\r\nWorld\r\n"},
 	}
 
 	for _, tt := range tests {
@@ -756,6 +783,15 @@ func mustNewBulkString(t testing.TB, s string) resp.CashewValue {
 	v, err := resp.NewBulkString(s)
 	if err != nil {
 		t.Fatalf("NewBulkString(%q): %v", s, err)
+	}
+	return v
+}
+
+func mustNewArray(t testing.TB, values []resp.CashewValue) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewArray(values)
+	if err != nil {
+		t.Fatalf("NewArray(%v): %v", values, err)
 	}
 	return v
 }
