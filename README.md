@@ -8,7 +8,7 @@ This is my take of [Build Your Own Redis Server](https://codingchallenges.fyi/ch
 | Goal                                                                      | Status                |
 | ------------------------------------------------------------------------- | --------------------- |
 | Serialise RESP (Simple Strings, Errors, Integers, Bulk Strings, Arrays)   | :white_check_mark:    |
-| De-serialise RESP                                                         | Pending               |
+| De-serialise RESP                                                         | :white_check_mark:    |
 | A server that listens (`PING`, `ECHO`)                                    | Pending               |
 | Set and Get keys                                                          | Pending               |
 | Concurrent access                                                         | Pending               |
