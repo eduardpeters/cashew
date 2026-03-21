@@ -7,6 +7,11 @@ import (
 	"github.com/eduardpeters/cashew/internal/resp"
 )
 
+type Result struct {
+	Content   string
+	CloseConn bool
+}
+
 func ParseCommand(b *bufio.Reader) ([]resp.CashewValue, error) {
 	parsed, err := resp.Unmarshal(b)
 	if err != nil {
@@ -21,6 +26,13 @@ func ParseCommand(b *bufio.Reader) ([]resp.CashewValue, error) {
 	}
 }
 
-func HandleCommand(cmd []resp.CashewValue) (resp.CashewValue, error) {
-	return nil, nil
+func HandleCommand(cmd []resp.CashewValue) (Result, error) {
+	if len(cmd) == 0 {
+		return Result{}, fmt.Errorf("empty command")
+	}
+	_, err := extractArgument(cmd[0])
+	if err != nil {
+		return Result{}, fmt.Errorf("argument parsing error: %w", err)
+	}
+	return Result{}, nil
 }

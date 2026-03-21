@@ -38,3 +38,43 @@ func TestParseCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestParseInvalidCommand(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+
+		{"Fails on simple string",
+			"+PING\r\n",
+		},
+		{"Fails on simple error",
+			"-ERROR\r\n",
+		},
+		{"Fails on integers",
+			":1234\r\n",
+		},
+		{"Fails on bulk strings",
+			"$4\r\nPING\r\n",
+		},
+		{"Fails on null",
+			"_\r\n",
+		},
+		{"Fails on bulk string null",
+			"$-1\r\n",
+		},
+		{"Fails on array null",
+			"*-1\r\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			_, err := commands.ParseCommand(bufio.NewReader(r))
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
+			}
+		})
+	}
+}
