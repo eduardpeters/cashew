@@ -20,3 +20,7 @@ func ParseCommand(b *bufio.Reader) ([]resp.CashewValue, error) {
 		return nil, fmt.Errorf("command must be array, got %v", cmd)
 	}
 }
+
+func HandleCommand(cmd []resp.CashewValue) (resp.CashewValue, error) {
+	return nil, nil
+}
