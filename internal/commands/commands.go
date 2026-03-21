@@ -30,9 +30,16 @@ func HandleCommand(cmd []resp.CashewValue) (Result, error) {
 	if len(cmd) == 0 {
 		return Result{}, fmt.Errorf("empty command")
 	}
-	_, err := extractArgument(cmd[0])
+
+	verb, err := ExtractArgument(cmd[0])
 	if err != nil {
 		return Result{}, fmt.Errorf("argument parsing error: %w", err)
 	}
-	return Result{}, nil
+
+	switch verb {
+	case PING:
+		return HandlePing(cmd[1:])
+	default:
+		return Result{}, fmt.Errorf("unknown command: %q", verb)
+	}
 }

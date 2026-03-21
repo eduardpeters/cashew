@@ -1,8 +1,9 @@
-package commands
+package commands_test
 
 import (
 	"testing"
 
+	"github.com/eduardpeters/cashew/internal/commands"
 	"github.com/eduardpeters/cashew/internal/resp"
 )
 
@@ -20,7 +21,7 @@ func TestExtractArgument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			arg, err := extractArgument(tt.input)
+			arg, err := commands.ExtractArgument(tt.input)
 			if err != nil {
 				t.Fatalf("Unexpected error %v", err)
 			}
@@ -44,7 +45,7 @@ func TestExtractInvalidArgument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := extractArgument(tt.input)
+			_, err := commands.ExtractArgument(tt.input)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}

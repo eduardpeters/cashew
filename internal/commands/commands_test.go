@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/eduardpeters/cashew/internal/commands"
+	"github.com/eduardpeters/cashew/internal/resp"
 )
 
 func TestParseCommand(t *testing.T) {
@@ -72,6 +73,30 @@ func TestParseInvalidCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := strings.NewReader(tt.input)
 			_, err := commands.ParseCommand(bufio.NewReader(r))
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
+			}
+		})
+	}
+}
+
+func TestHandleInvalidCommand(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []resp.CashewValue
+	}{
+
+		{"Fails on unknown command",
+			[]resp.CashewValue{mustNewBulkString(t, "PONG")},
+		},
+		{"Fails on non bulk string command",
+			[]resp.CashewValue{mustNewSimpleString(t, "PONG")},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := commands.HandleCommand(tt.input)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
