@@ -41,7 +41,10 @@ func HandleCommand(cmd []resp.CashewValue) (Result, error) {
 		return HandlePing(cmd[1:])
 	case ECHO:
 		return HandleEcho(cmd[1:])
+	// Commands outside the scope to support clients
+	case "CLIENT":
+		return ResultOK(), nil
 	default:
-		return Result{}, fmt.Errorf("unknown command: %q", verb)
+		return Result{}, fmt.Errorf("unknown command %q", verb)
 	}
 }

@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"io"
 	"log"
 	"net"
-	"strings"
+
+	"github.com/eduardpeters/cashew/internal/commands"
 )
 
 func main() {
@@ -14,6 +15,8 @@ func main() {
 		log.Fatal("Error listening:", err)
 	}
 	defer listener.Close()
+
+	log.Println("Now listening at port 6379")
 
 	for {
 		conn, err := listener.Accept()
@@ -27,19 +30,32 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
+	addr := conn.RemoteAddr().String()
+	log.Printf("accepted %s", addr)
 
 	reader := bufio.NewReader(conn)
-	message, err := reader.ReadString('\n')
-	if err != nil {
-		log.Printf("Read error %v", err)
-		return
-	}
 
-	ackMsg := strings.ToUpper(strings.TrimSpace(message))
-	response := fmt.Sprintf("ACK: %s\n", ackMsg)
+	for {
+		args, err := commands.ParseCommand(reader)
+		if err != nil {
+			if err == io.EOF {
+				log.Printf("%s disconnected", addr)
+			} else {
+				log.Printf("Read error from %s: %v", addr, err)
+			}
+			return
+		}
+		if len(args) == 0 {
+			continue
+		}
 
-	_, err = conn.Write([]byte(response))
-	if err != nil {
-		log.Printf("Server write error: %v", err)
+		result, err := commands.HandleCommand(args)
+		if err != nil {
+			result = commands.ResultError(err)
+		}
+		if _, err := conn.Write([]byte(result.Content)); err != nil {
+			log.Printf("write error to %s: %v", addr, err)
+			return
+		}
 	}
 }
