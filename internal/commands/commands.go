@@ -39,6 +39,8 @@ func HandleCommand(cmd []resp.CashewValue) (Result, error) {
 	switch verb {
 	case PING:
 		return HandlePing(cmd[1:])
+	case ECHO:
+		return HandleEcho(cmd[1:])
 	default:
 		return Result{}, fmt.Errorf("unknown command: %q", verb)
 	}

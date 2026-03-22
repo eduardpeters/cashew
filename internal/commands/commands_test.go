@@ -80,6 +80,48 @@ func TestParseInvalidCommand(t *testing.T) {
 	}
 }
 
+func TestHandleCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []resp.CashewValue
+		expected commands.Result
+	}{
+
+		{"handles PING with no args",
+			[]resp.CashewValue{mustNewBulkString(t, "PING")},
+			commands.Result{"+PONG\r\n", false},
+		},
+		{"handles PING with single arg",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "PING"),
+				mustNewBulkString(t, "hello")},
+			commands.Result{"$5\r\nhello\r\n", false},
+		},
+		{"handles ECHO with single arg",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "ECHO"),
+				mustNewBulkString(t, "hello")},
+			commands.Result{"$5\r\nhello\r\n", false},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := commands.HandleCommand(tt.input)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if r.Content != tt.expected.Content {
+				t.Errorf("incorrect result content want %q, got %q", tt.expected.Content, r.Content)
+			}
+			if r.CloseConn != tt.expected.CloseConn {
+				t.Errorf("incorrect close connection value want %v, got %v", tt.expected.CloseConn, r.CloseConn)
+			}
+		})
+	}
+}
+
 func TestHandleInvalidCommand(t *testing.T) {
 	tests := []struct {
 		name  string
