@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/eduardpeters/cashew/internal/resp"
 )
@@ -11,6 +12,7 @@ type StoredValue struct {
 }
 
 type Store struct {
+	mu    sync.RWMutex
 	store map[string]StoredValue
 }
 
@@ -19,6 +21,9 @@ func NewStore() *Store {
 }
 
 func (s *Store) Set(key, value resp.BulkString) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	v := key.GetValue()
 	k, ok := v.(string)
 	if !ok {
@@ -31,6 +36,9 @@ func (s *Store) Set(key, value resp.BulkString) error {
 }
 
 func (s *Store) Get(key resp.BulkString) (resp.CashewValue, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	v := key.GetValue()
 	k, ok := v.(string)
 	if !ok {
