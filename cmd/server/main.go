@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/eduardpeters/cashew/internal/commands"
+	"github.com/eduardpeters/cashew/internal/store"
 )
 
 func main() {
@@ -18,17 +19,19 @@ func main() {
 
 	log.Println("Now listening at port 6379")
 
+	store := store.NewStore()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("Error accepting connection:", err)
 		}
 
-		go handleConnection(conn)
+		go handleConnection(store, conn)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(store *store.Store, conn net.Conn) {
 	defer conn.Close()
 	addr := conn.RemoteAddr().String()
 	log.Printf("accepted %s", addr)
@@ -49,7 +52,7 @@ func handleConnection(conn net.Conn) {
 			continue
 		}
 
-		result, err := commands.HandleCommand(args)
+		result, err := commands.HandleCommand(store, args)
 		if err != nil {
 			result = commands.ResultError(err)
 		}

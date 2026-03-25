@@ -7,6 +7,7 @@ import (
 
 	"github.com/eduardpeters/cashew/internal/commands"
 	"github.com/eduardpeters/cashew/internal/resp"
+	"github.com/eduardpeters/cashew/internal/store"
 )
 
 func TestParseCommand(t *testing.T) {
@@ -103,11 +104,20 @@ func TestHandleCommand(t *testing.T) {
 				mustNewBulkString(t, "hello")},
 			commands.Result{"$5\r\nhello\r\n", false},
 		},
+		{"handles plain SET",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "SET"),
+				mustNewBulkString(t, "name"),
+				mustNewBulkString(t, "juan"),
+			},
+			commands.Result{"+OK\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := commands.HandleCommand(tt.input)
+			s := store.NewStore()
+			r, err := commands.HandleCommand(s, tt.input)
 			if err != nil {
 				t.Fatalf("Unexpected error %v", err)
 			}
@@ -138,7 +148,8 @@ func TestHandleInvalidCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := commands.HandleCommand(tt.input)
+			s := store.NewStore()
+			_, err := commands.HandleCommand(s, tt.input)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
