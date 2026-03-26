@@ -10,7 +10,7 @@ This is my take of [Build Your Own Redis Server](https://codingchallenges.fyi/ch
 | Serialise RESP (Simple Strings, Errors, Integers, Bulk Strings, Arrays)   | :white_check_mark:    |
 | De-serialise RESP                                                         | :white_check_mark:    |
 | A server that listens (`PING`, `ECHO`)                                    | :white_check_mark:    |
-| Set and Get keys                                                          | Pending               |
-| Concurrent access                                                         | Pending               |
+| Set and Get keys                                                          | :white_check_mark:    |
+| Concurrent access                                                         | :white_check_mark:    |
 | Implement expiry options                                                  | Pending               |
 | Implement `EXISTS`, `DEL`, `INCR`, `DECR`, `LPUSH`, `RPUSH`, `SAVE`       | Pending               |
