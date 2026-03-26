@@ -112,6 +112,13 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{"+OK\r\n", false},
 		},
+		{"handles plain GET",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "GET"),
+				mustNewBulkString(t, "name"),
+			},
+			commands.Result{"_\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {

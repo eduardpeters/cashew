@@ -70,3 +70,12 @@ func mustNewBulkString(t testing.TB, s string) resp.CashewValue {
 	}
 	return v
 }
+
+func mustNewNull(t testing.TB) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewNull()
+	if err != nil {
+		t.Fatalf("NewNull(): %v", err)
+	}
+	return v
+}
