@@ -60,8 +60,14 @@ func TestHandleSetInvalidArguments(t *testing.T) {
 		{"Fails on single argument",
 			[]resp.CashewValue{mustNewBulkString(t, "key")},
 		},
-		{"Fails on non bulk string arguments",
+		{"Fails on non bulk string arguments - first simple string",
 			[]resp.CashewValue{mustNewSimpleString(t, "key"), mustNewBulkString(t, "value")},
+		},
+		{"Fails on non bulk string arguments - second simple string",
+			[]resp.CashewValue{mustNewBulkString(t, "key"), mustNewSimpleString(t, "value")},
+		},
+		{"Fails on non bulk string arguments - all simple string",
+			[]resp.CashewValue{mustNewSimpleString(t, "key"), mustNewSimpleString(t, "value")},
 		},
 	}
 
