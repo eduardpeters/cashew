@@ -30,14 +30,14 @@ func TestSetNewValue(t *testing.T) {
 	}
 }
 
-func TestSetWithExpiryMillis(t *testing.T) {
+func TestSetWithExpiry(t *testing.T) {
 	key := mustNewBulkString(t, "name")
 	value := mustNewBulkString(t, "john")
-	expireMilliseconds := 5000
+	expiry := time.Now().Add(time.Millisecond * 5)
 
 	s := store.NewStore()
 
-	err := s.SetWithExpiryMillis(key, value, expireMilliseconds)
+	err := s.SetWithExpiry(key, value, expiry)
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}
@@ -88,7 +88,7 @@ func TestGetValueWithinExpiry(t *testing.T) {
 		s := store.NewStore()
 		key := "name"
 		value := "john"
-		mustSetInStoreWithExpiry(t, s, key, value, 5000)
+		mustSetInStoreWithExpiryMillis(t, s, key, value, 5000)
 
 		time.Sleep(time.Second * 2)
 
@@ -109,7 +109,7 @@ func TestGetValueAfterExpiry(t *testing.T) {
 		s := store.NewStore()
 		key := "name"
 		value := "john"
-		mustSetInStoreWithExpiry(t, s, key, value, 1000)
+		mustSetInStoreWithExpiryMillis(t, s, key, value, 1000)
 
 		time.Sleep(time.Second * 2)
 
@@ -122,15 +122,6 @@ func TestGetValueAfterExpiry(t *testing.T) {
 			t.Errorf("incorrect stored value want %v, got %v", nil, stored.GetValue())
 		}
 	})
-}
-
-func mustNewSimpleString(t testing.TB, s string) resp.SimpleString {
-	t.Helper()
-	v, err := resp.NewSimpleString(s)
-	if err != nil {
-		t.Fatalf("NewSimpleString(%q): %v", s, err)
-	}
-	return v
 }
 
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
@@ -150,9 +141,10 @@ func mustSetInStore(t testing.TB, s *store.Store, key, value string) {
 	}
 }
 
-func mustSetInStoreWithExpiry(t testing.TB, s *store.Store, key, value string, expiryMillis int) {
+func mustSetInStoreWithExpiryMillis(t testing.TB, s *store.Store, key, value string, expiryMillis int) {
 	t.Helper()
-	err := s.SetWithExpiryMillis(mustNewBulkString(t, key), mustNewBulkString(t, value), expiryMillis)
+	expiry := time.Now().Add(time.Millisecond * time.Duration(expiryMillis))
+	err := s.SetWithExpiry(mustNewBulkString(t, key), mustNewBulkString(t, value), expiry)
 	if err != nil {
 		t.Fatalf("store.Set(%q,%q): %v", key, value, err)
 	}

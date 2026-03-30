@@ -38,7 +38,7 @@ func (s *Store) Set(key, value resp.BulkString) error {
 	return nil
 }
 
-func (s *Store) SetWithExpiryMillis(key, value resp.BulkString, expiryMillis int) error {
+func (s *Store) SetWithExpiry(key, value resp.BulkString, expiry time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -47,8 +47,6 @@ func (s *Store) SetWithExpiryMillis(key, value resp.BulkString, expiryMillis int
 	if !ok {
 		return fmt.Errorf("key value is not string: %v", v)
 	}
-
-	expiry := time.Now().Add(time.Millisecond * time.Duration(expiryMillis))
 
 	s.store[k] = StoredValue{value: value, expiry: expiry, expires: true}
 
