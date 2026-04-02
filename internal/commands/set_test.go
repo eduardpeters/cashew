@@ -94,15 +94,19 @@ func TestHandleSetInvalidArguments(t *testing.T) {
 	}
 }
 
-func TestHandleSetEx(t *testing.T) {
+func TestHandleSetEX(t *testing.T) {
 	tests := []struct {
 		name          string
 		input         []resp.CashewValue
 		expireSeconds int
 	}{
-		{"sets an expiry for 1 second",
+		{"sets an expiration for 1 second",
 			[]resp.CashewValue{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan"), mustNewBulkString(t, "EX"), mustNewBulkString(t, "1")},
 			1,
+		},
+		{"sets an expiration for 5 seconds",
+			[]resp.CashewValue{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan"), mustNewBulkString(t, "EX"), mustNewBulkString(t, "5")},
+			5,
 		},
 	}
 
@@ -116,6 +120,8 @@ func TestHandleSetEx(t *testing.T) {
 					t.Fatalf("Unexpected error: %v", err)
 				}
 
+				time.Sleep(time.Second*time.Duration(tt.expireSeconds-1) + time.Millisecond)
+
 				key := tt.input[0].(resp.BulkString)
 				stored, err := s.Get(key)
 				if err != nil {
@@ -127,6 +133,55 @@ func TestHandleSetEx(t *testing.T) {
 				}
 
 				time.Sleep(time.Second*time.Duration(tt.expireSeconds) + time.Millisecond)
+
+				stored, err = s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != nil {
+					t.Errorf("incorrect value after expiration want %v, got %q", nil, stored.GetValue())
+				}
+			})
+		})
+	}
+}
+
+func TestHandleSetPX(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        []resp.CashewValue
+		expireMillis int
+	}{
+		{"sets an expiry for 512 milliseconds",
+			[]resp.CashewValue{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan"), mustNewBulkString(t, "PX"), mustNewBulkString(t, "512")},
+			512,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				s := store.NewStore()
+
+				_, err := commands.HandleSet(s, tt.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				time.Sleep(time.Millisecond*time.Duration(tt.expireMillis-100) + time.Millisecond)
+
+				key := tt.input[0].(resp.BulkString)
+				stored, err := s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != tt.input[1].GetValue() {
+					t.Fatalf("incorrect stored value want %q, got %q", tt.input[1].GetValue(), stored.GetValue())
+				}
+
+				time.Sleep(time.Millisecond * time.Duration(tt.expireMillis+1))
 
 				stored, err = s.Get(key)
 				if err != nil {
