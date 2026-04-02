@@ -12,5 +12,5 @@ This is my take of [Build Your Own Redis Server](https://codingchallenges.fyi/ch
 | A server that listens (`PING`, `ECHO`)                                    | :white_check_mark:    |
 | Set and Get keys                                                          | :white_check_mark:    |
 | Concurrent access                                                         | :white_check_mark:    |
-| Implement expiry options                                                  | Pending               |
+| Implement expiry options                                                  | :white_check_mark:    |
 | Implement `EXISTS`, `DEL`, `INCR`, `DECR`, `LPUSH`, `RPUSH`, `SAVE`       | Pending               |
