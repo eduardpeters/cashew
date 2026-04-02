@@ -10,9 +10,11 @@ import (
 )
 
 const (
-	SET       = "SET"
-	OPTION_EX = "EX"
-	OPTION_PX = "PX"
+	SET         = "SET"
+	OPTION_EX   = "EX"
+	OPTION_PX   = "PX"
+	OPTION_EXAT = "EXAT"
+	OPTION_PXAT = "PXAT"
 )
 
 func HandleSet(s *store.Store, args []resp.CashewValue) (Result, error) {
@@ -51,9 +53,6 @@ func handleSetWithOptions(s *store.Store, key, value resp.BulkString, options []
 	if err != nil {
 		return Result{}, err
 	}
-	if option != OPTION_EX && option != OPTION_PX {
-		return Result{}, fmt.Errorf("Unknown option for SET: %q", option)
-	}
 	expiry, err := ExtractArgumentInteger(options[1])
 	if err != nil {
 		return Result{}, err
@@ -68,6 +67,10 @@ func handleSetWithOptions(s *store.Store, key, value resp.BulkString, options []
 		expiration = time.Now().Add(time.Second * time.Duration(expiry))
 	case OPTION_PX:
 		expiration = time.Now().Add(time.Millisecond * time.Duration(expiry))
+	case OPTION_EXAT:
+		expiration = time.Unix(expiry, 0)
+	case OPTION_PXAT:
+		expiration = time.UnixMilli(expiry)
 	default:
 		return Result{}, fmt.Errorf("Unknown option for SET: %q", option)
 	}

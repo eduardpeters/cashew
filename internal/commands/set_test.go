@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"strconv"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -182,6 +183,108 @@ func TestHandleSetPX(t *testing.T) {
 				}
 
 				time.Sleep(time.Millisecond * time.Duration(tt.expireMillis+1))
+
+				stored, err = s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != nil {
+					t.Errorf("incorrect value after expiration want %v, got %q", nil, stored.GetValue())
+				}
+			})
+		})
+	}
+}
+
+func TestHandleSetEXAT(t *testing.T) {
+	tests := []struct {
+		name                string
+		input               []resp.CashewValue
+		expireSecondsOffset int
+	}{
+		{"sets an expiry for a timestamp 5 seconds forward",
+			[]resp.CashewValue{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan"), mustNewBulkString(t, "EXAT")},
+			5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				s := store.NewStore()
+
+				expiration := time.Now().Add(time.Second * time.Duration(tt.expireSecondsOffset)).Unix()
+				cmds := append(tt.input, mustNewBulkString(t, strconv.Itoa(int(expiration))))
+				_, err := commands.HandleSet(s, cmds)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				time.Sleep(time.Second*time.Duration(tt.expireSecondsOffset-1) + time.Millisecond)
+
+				key := tt.input[0].(resp.BulkString)
+				stored, err := s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != tt.input[1].GetValue() {
+					t.Fatalf("incorrect stored value want %q, got %q", tt.input[1].GetValue(), stored.GetValue())
+				}
+
+				time.Sleep(time.Second * time.Duration(tt.expireSecondsOffset+1))
+
+				stored, err = s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != nil {
+					t.Errorf("incorrect value after expiration want %v, got %q", nil, stored.GetValue())
+				}
+			})
+		})
+	}
+}
+
+func TestHandleSetPXAT(t *testing.T) {
+	tests := []struct {
+		name               string
+		input              []resp.CashewValue
+		expireMillisOffset int
+	}{
+		{"sets an expiry for a timestamp 500 milliseconds forward",
+			[]resp.CashewValue{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan"), mustNewBulkString(t, "PXAT")},
+			500,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				s := store.NewStore()
+
+				expiration := time.Now().Add(time.Millisecond * time.Duration(tt.expireMillisOffset)).UnixMilli()
+				cmds := append(tt.input, mustNewBulkString(t, strconv.Itoa(int(expiration))))
+				_, err := commands.HandleSet(s, cmds)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				time.Sleep(time.Millisecond*time.Duration(tt.expireMillisOffset-100) + time.Millisecond)
+
+				key := tt.input[0].(resp.BulkString)
+				stored, err := s.Get(key)
+				if err != nil {
+					t.Fatalf("Unexpected error %v", err)
+				}
+
+				if stored.GetValue() != tt.input[1].GetValue() {
+					t.Fatalf("incorrect stored value want %q, got %q", tt.input[1].GetValue(), stored.GetValue())
+				}
+
+				time.Sleep(time.Millisecond * time.Duration(tt.expireMillisOffset+1))
 
 				stored, err = s.Get(key)
 				if err != nil {
