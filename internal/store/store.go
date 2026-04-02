@@ -27,10 +27,9 @@ func (s *Store) Set(key, value resp.BulkString) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	v := key.GetValue()
-	k, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("key value is not string: %v", v)
+	k, err := extractKeyString(key)
+	if err != nil {
+		return err
 	}
 
 	s.store[k] = StoredValue{value: value, expires: false}
@@ -42,10 +41,9 @@ func (s *Store) SetWithExpiry(key, value resp.BulkString, expiry time.Time) erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	v := key.GetValue()
-	k, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("key value is not string: %v", v)
+	k, err := extractKeyString(key)
+	if err != nil {
+		return err
 	}
 
 	s.store[k] = StoredValue{value: value, expiry: expiry, expires: true}
@@ -57,11 +55,11 @@ func (s *Store) Get(key resp.BulkString) (resp.CashewValue, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	v := key.GetValue()
-	k, ok := v.(string)
-	if !ok {
-		return resp.BulkString{}, fmt.Errorf("key value is not string: %v", v)
+	k, err := extractKeyString(key)
+	if err != nil {
+		return resp.BulkString{}, err
 	}
+
 	stored, ok := s.store[k]
 	if !ok {
 		return resp.NewNull()
@@ -73,4 +71,21 @@ func (s *Store) Get(key resp.BulkString) (resp.CashewValue, error) {
 	}
 
 	return stored.value, nil
+}
+
+func (s *Store) Exists(key resp.BulkString) (bool, error) {
+	stored, err := s.Get(key)
+	if err != nil {
+		return false, err
+	}
+	return stored.GetValue() != nil, nil
+}
+
+func extractKeyString(key resp.BulkString) (string, error) {
+	v := key.GetValue()
+	k, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("key value is not string: %v", v)
+	}
+	return k, nil
 }

@@ -124,6 +124,36 @@ func TestGetValueAfterExpiry(t *testing.T) {
 	})
 }
 
+func TestExistsMissingValue(t *testing.T) {
+	s := store.NewStore()
+	key := "name"
+
+	exists, err := s.Exists(mustNewBulkString(t, key))
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if exists {
+		t.Errorf("Value should not be found, got %v", exists)
+	}
+}
+
+func TestExistsStoredValue(t *testing.T) {
+	s := store.NewStore()
+	key := "name"
+	value := "john"
+	mustSetInStore(t, s, key, value)
+
+	exists, err := s.Exists(mustNewBulkString(t, key))
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if !exists {
+		t.Errorf("Value should be found, got %v", exists)
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
