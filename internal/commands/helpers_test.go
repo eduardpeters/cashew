@@ -145,6 +145,15 @@ func mustNewSimpleString(t testing.TB, s string) resp.CashewValue {
 	return v
 }
 
+func mustNewInteger(t testing.TB, s string) resp.CashewValue {
+	t.Helper()
+	v, err := resp.NewInteger(s)
+	if err != nil {
+		t.Fatalf("NewInteger(%q): %v", s, err)
+	}
+	return v
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.CashewValue {
 	t.Helper()
 	v, err := resp.NewBulkString(s)

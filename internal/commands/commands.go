@@ -46,6 +46,8 @@ func HandleCommand(s *store.Store, cmd []resp.CashewValue) (Result, error) {
 		return HandleSet(s, cmd[1:])
 	case GET:
 		return HandleGet(s, cmd[1:])
+	case EXISTS:
+		return HandleExists(s, cmd[1:])
 	// Commands outside the scope to support clients
 	case "CLIENT":
 		return ResultOK(), nil

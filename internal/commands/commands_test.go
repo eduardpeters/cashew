@@ -119,6 +119,13 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{"_\r\n", false},
 		},
+		{"handles EXISTS",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "EXISTS"),
+				mustNewBulkString(t, "name"),
+			},
+			commands.Result{":0\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {
