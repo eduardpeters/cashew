@@ -32,7 +32,7 @@ func HandleCommand(s *store.Store, cmd []resp.CashewValue) (Result, error) {
 		return Result{}, fmt.Errorf("empty command")
 	}
 
-	verb, err := ExtractArgument(cmd[0])
+	verb, err := ExtractArgumentString(cmd[0])
 	if err != nil {
 		return Result{}, fmt.Errorf("argument parsing error: %w", err)
 	}

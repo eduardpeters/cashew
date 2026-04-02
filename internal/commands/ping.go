@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/eduardpeters/cashew/internal/resp"
 )
 
@@ -18,12 +16,11 @@ func HandlePing(args []resp.CashewValue) (Result, error) {
 	if len(args) == 0 {
 		content, err = resp.NewSimpleString(PONG)
 	} else {
-		arg := args[0]
-		if v, ok := arg.(resp.BulkString); !ok {
-			err = fmt.Errorf("argument not bulk string: %v", arg)
-		} else {
-			content = v
+		v, err := ExtractBulkStringArgument(args[0])
+		if err != nil {
+			return Result{}, err
 		}
+		content = v
 	}
 
 	if err != nil {

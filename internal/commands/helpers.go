@@ -7,10 +7,19 @@ import (
 )
 
 // Arguments in commands must always be bulk strings
-func ExtractArgument(arg resp.CashewValue) (string, error) {
-	bulkString, ok := arg.(resp.BulkString)
+func ExtractBulkStringArgument(arg resp.CashewValue) (resp.BulkString, error) {
+	value, ok := arg.(resp.BulkString)
 	if !ok {
-		return "", fmt.Errorf("argument not bulk string: %v", arg)
+		return resp.BulkString{}, fmt.Errorf("argument not bulk string: %v", value)
+	}
+	return value, nil
+}
+
+// Gets underlying string value from an argument
+func ExtractArgumentString(arg resp.CashewValue) (string, error) {
+	bulkString, err := ExtractBulkStringArgument(arg)
+	if err != nil {
+		return "", err
 	}
 	v, ok := bulkString.GetValue().(string)
 	if !ok {

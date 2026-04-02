@@ -7,7 +7,7 @@ import (
 	"github.com/eduardpeters/cashew/internal/resp"
 )
 
-func TestExtractArgument(t *testing.T) {
+func TestExtractBulkStringArgument(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    resp.CashewValue
@@ -21,7 +21,33 @@ func TestExtractArgument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			arg, err := commands.ExtractArgument(tt.input)
+			arg, err := commands.ExtractBulkStringArgument(tt.input)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if arg.GetValue() != tt.expected {
+				t.Errorf("incorrect argument. want %q, got %q", tt.expected, arg)
+			}
+		})
+	}
+}
+
+func TestExtractArgumentAsString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    resp.CashewValue
+		expected string
+	}{
+		{"Returns string from BulkString",
+			mustNewBulkString(t, "PING"),
+			"PING",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			arg, err := commands.ExtractArgumentString(tt.input)
 			if err != nil {
 				t.Fatalf("Unexpected error %v", err)
 			}
@@ -38,14 +64,14 @@ func TestExtractInvalidArgument(t *testing.T) {
 		name  string
 		input resp.CashewValue
 	}{
-		{"Returns string from BulkString",
+		{"Cannot extract from SimpleString",
 			mustNewSimpleString(t, "PING"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := commands.ExtractArgument(tt.input)
+			_, err := commands.ExtractArgumentString(tt.input)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}

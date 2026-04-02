@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/eduardpeters/cashew/internal/resp"
 )
@@ -15,11 +14,10 @@ func HandleEcho(args []resp.CashewValue) (Result, error) {
 	if len(args) == 0 {
 		return Result{}, errors.New("missing argument")
 	}
-	arg := args[0]
-	v, ok := arg.(resp.BulkString)
-	if !ok {
-		return Result{}, fmt.Errorf("argument not bulk string: %v", arg)
+	arg, err := ExtractBulkStringArgument(args[0])
+	if err != nil {
+		return Result{}, err
 	}
 
-	return Result{v.Marshal(), false}, nil
+	return Result{arg.Marshal(), false}, nil
 }

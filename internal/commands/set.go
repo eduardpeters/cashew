@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/eduardpeters/cashew/internal/resp"
@@ -17,30 +16,26 @@ func HandleSet(s *store.Store, args []resp.CashewValue) (Result, error) {
 	if len(args) < 2 {
 		return Result{}, errors.New("missing arguments")
 	}
-	k := args[0]
-	key, ok := k.(resp.BulkString)
-	if !ok {
-		return Result{}, fmt.Errorf("argument not bulk string: %v", k)
+	key, err := ExtractBulkStringArgument(args[0])
+	if err != nil {
+		return Result{}, err
 	}
-	v := args[1]
-	value, ok := v.(resp.BulkString)
-	if !ok {
-		return Result{}, fmt.Errorf("argument not bulk string: %v", k)
+	value, err := ExtractBulkStringArgument(args[1])
+	if err != nil {
+		return Result{}, err
 	}
 	if len(args) > 2 {
 		if len(args) < 4 {
 			return Result{}, errors.New("missing arguments")
 		}
 
-		opt := args[2]
-		_, ok := opt.(resp.BulkString)
-		if !ok {
-			return Result{}, fmt.Errorf("argument not bulk string: %v", k)
+		_, err = ExtractBulkStringArgument(args[2])
+		if err != nil {
+			return Result{}, err
 		}
-		d := args[3]
-		_, ok = d.(resp.BulkString)
-		if !ok {
-			return Result{}, fmt.Errorf("argument not bulk string: %v", k)
+		_, err = ExtractBulkStringArgument(args[3])
+		if err != nil {
+			return Result{}, err
 		}
 
 		expiration := time.Now().Add(time.Second * 1)
@@ -52,7 +47,7 @@ func HandleSet(s *store.Store, args []resp.CashewValue) (Result, error) {
 		return ResultOK(), nil
 	}
 
-	err := s.Set(key, value)
+	err = s.Set(key, value)
 	if err != nil {
 		return Result{}, err
 	}
