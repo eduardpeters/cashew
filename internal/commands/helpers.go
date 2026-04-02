@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/eduardpeters/cashew/internal/resp"
 )
@@ -26,6 +27,19 @@ func ExtractArgumentString(arg resp.CashewValue) (string, error) {
 		return "", fmt.Errorf("bulk string value not string: %v", bulkString.GetValue())
 	}
 	return v, nil
+}
+
+// Gets underlying integer value from an argument
+func ExtractArgumentInteger(arg resp.CashewValue) (int64, error) {
+	v, err := ExtractArgumentString(arg)
+	if err != nil {
+		return 0, err
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("bulk string value not integer: %v", v)
+	}
+	return n, nil
 }
 
 // Generates an OK simple string Result

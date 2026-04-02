@@ -59,7 +59,7 @@ func TestExtractArgumentAsString(t *testing.T) {
 	}
 }
 
-func TestExtractInvalidArgument(t *testing.T) {
+func TestExtractInvalidStringArgument(t *testing.T) {
 	tests := []struct {
 		name  string
 		input resp.CashewValue
@@ -72,6 +72,63 @@ func TestExtractInvalidArgument(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := commands.ExtractArgumentString(tt.input)
+			if err == nil {
+				t.Errorf("Expected error for %q - got: %v", tt.input, err)
+			}
+		})
+	}
+}
+
+func TestExtractArgumentAsInteger(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    resp.CashewValue
+		expected int64
+	}{
+		{"Extracts 0",
+			mustNewBulkString(t, "0"),
+			0,
+		},
+		{"Extracts 1",
+			mustNewBulkString(t, "1"),
+			1,
+		},
+		{"Extracts -1",
+			mustNewBulkString(t, "-1"),
+			-1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			arg, err := commands.ExtractArgumentInteger(tt.input)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if arg != tt.expected {
+				t.Errorf("incorrect argument. want %d, got %d", tt.expected, arg)
+			}
+		})
+	}
+}
+
+func TestExtractInvalidIntegerArgument(t *testing.T) {
+	tests := []struct {
+		name  string
+		input resp.CashewValue
+	}{
+		{"Cannot extract string as integer",
+			mustNewBulkString(t, "uno"),
+		},
+		{"Cannot extract integer from simple string",
+			mustNewSimpleString(t, "123"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := commands.ExtractArgumentInteger(tt.input)
 			if err == nil {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}

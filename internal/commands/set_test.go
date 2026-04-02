@@ -72,7 +72,13 @@ func TestHandleSetInvalidArguments(t *testing.T) {
 			[]resp.CashewValue{mustNewSimpleString(t, "key"), mustNewSimpleString(t, "value")},
 		},
 		{"Fails on missing expiry seconds",
-			[]resp.CashewValue{mustNewSimpleString(t, "key"), mustNewSimpleString(t, "value"), mustNewBulkString(t, "EX")},
+			[]resp.CashewValue{mustNewBulkString(t, "key"), mustNewBulkString(t, "value"), mustNewBulkString(t, "EX")},
+		},
+		{"Fails on negative expiry seconds",
+			[]resp.CashewValue{mustNewBulkString(t, "key"), mustNewBulkString(t, "value"), mustNewBulkString(t, "EX"), mustNewBulkString(t, "-1")},
+		},
+		{"Fails on unknown option",
+			[]resp.CashewValue{mustNewBulkString(t, "key"), mustNewBulkString(t, "value"), mustNewBulkString(t, "expire"), mustNewBulkString(t, "1")},
 		},
 	}
 
