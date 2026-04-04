@@ -126,6 +126,13 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{":0\r\n", false},
 		},
+		{"handles DEL",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "DEL"),
+				mustNewBulkString(t, "name"),
+			},
+			commands.Result{":0\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {
