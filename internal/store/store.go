@@ -81,6 +81,15 @@ func (s *Store) Exists(key resp.BulkString) (bool, error) {
 	return stored.GetValue() != nil, nil
 }
 
+func (s *Store) Delete(key resp.BulkString) error {
+	k, err := extractKeyString(key)
+	if err != nil {
+		return err
+	}
+	delete(s.store, k)
+	return nil
+}
+
 func extractKeyString(key resp.BulkString) (string, error) {
 	v := key.GetValue()
 	k, ok := v.(string)

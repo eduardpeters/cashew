@@ -154,6 +154,42 @@ func TestExistsStoredValue(t *testing.T) {
 	}
 }
 
+func TestDeleteMissingValue(t *testing.T) {
+	s := store.NewStore()
+	key := "name"
+
+	err := s.Delete(mustNewBulkString(t, key))
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+}
+
+func TestDeleteStoredValue(t *testing.T) {
+	s := store.NewStore()
+	key := "name"
+	value := "john"
+	mustSetInStore(t, s, key, value)
+
+	bulkStringKey := mustNewBulkString(t, key)
+	exists, err := s.Exists(bulkStringKey)
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+	if !exists {
+		t.Errorf("Value should be found, got %v", exists)
+	}
+
+	s.Delete(bulkStringKey)
+
+	exists, err = s.Exists(bulkStringKey)
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+	if exists {
+		t.Errorf("Value should not be found, got %v", exists)
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
