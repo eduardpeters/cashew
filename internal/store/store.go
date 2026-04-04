@@ -24,49 +24,50 @@ func NewStore() *Store {
 }
 
 func (s *Store) Set(key, value resp.BulkString) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	k, err := extractKeyString(key)
 	if err != nil {
 		return err
 	}
 
+	s.mu.Lock()
 	s.store[k] = StoredValue{value: value, expires: false}
+	s.mu.Unlock()
 
 	return nil
 }
 
 func (s *Store) SetWithExpiry(key, value resp.BulkString, expiry time.Time) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	k, err := extractKeyString(key)
 	if err != nil {
 		return err
 	}
 
+	s.mu.Lock()
 	s.store[k] = StoredValue{value: value, expiry: expiry, expires: true}
+	s.mu.Unlock()
 
 	return nil
 }
 
 func (s *Store) Get(key resp.BulkString) (resp.CashewValue, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	k, err := extractKeyString(key)
 	if err != nil {
 		return resp.BulkString{}, err
 	}
 
+	s.mu.RLock()
 	stored, ok := s.store[k]
+	s.mu.RUnlock()
+
 	if !ok {
 		return resp.NewNull()
 	}
 
 	if stored.expires && stored.expiry.Before(time.Now()) {
-		delete(s.store, k)
+		s.mu.Lock()
+		s.deleteKey(k)
+		s.mu.Unlock()
+
 		return resp.NewNull()
 	}
 
@@ -86,8 +87,17 @@ func (s *Store) Delete(key resp.BulkString) error {
 	if err != nil {
 		return err
 	}
-	delete(s.store, k)
+
+	s.mu.Lock()
+	s.deleteKey(k)
+	s.mu.Unlock()
+
 	return nil
+}
+
+// For use only with lock in calling context
+func (s *Store) deleteKey(key string) {
+	delete(s.store, key)
 }
 
 func extractKeyString(key resp.BulkString) (string, error) {
