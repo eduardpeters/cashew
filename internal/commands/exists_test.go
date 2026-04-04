@@ -8,11 +8,6 @@ import (
 	"github.com/eduardpeters/cashew/internal/store"
 )
 
-type KV struct {
-	key   resp.CashewValue
-	value resp.CashewValue
-}
-
 func TestHandleExists(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -55,7 +50,7 @@ func TestHandleExists(t *testing.T) {
 			[]resp.CashewValue{mustNewBulkString(t, "nombre"), mustNewBulkString(t, "key"), mustNewBulkString(t, "name")},
 			commands.Result{mustNewInteger(t, "2").Marshal(), false},
 		},
-		{"Replies with double count if same found key is requested and twice",
+		{"Replies with double count if same found key is requested twice",
 			[]KV{
 				{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan")},
 			},
@@ -106,18 +101,5 @@ func TestHandleExistsInvalidArguments(t *testing.T) {
 				t.Errorf("Expected error for %q - got: %v", tt.input, err)
 			}
 		})
-	}
-}
-
-func storeValues(t testing.TB, s *store.Store, keyValuePairs []KV) {
-	t.Helper()
-	for _, kv := range keyValuePairs {
-		key := kv.key.(resp.BulkString)
-		value := kv.value.(resp.BulkString)
-
-		err := s.Set(key, value)
-		if err != nil {
-			t.Fatalf("unexpected error %v", err)
-		}
 	}
 }

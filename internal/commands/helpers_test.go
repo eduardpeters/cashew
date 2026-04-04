@@ -5,6 +5,7 @@ import (
 
 	"github.com/eduardpeters/cashew/internal/commands"
 	"github.com/eduardpeters/cashew/internal/resp"
+	"github.com/eduardpeters/cashew/internal/store"
 )
 
 func TestExtractBulkStringArgument(t *testing.T) {
@@ -170,4 +171,22 @@ func mustNewNull(t testing.TB) resp.CashewValue {
 		t.Fatalf("NewNull(): %v", err)
 	}
 	return v
+}
+
+type KV struct {
+	key   resp.CashewValue
+	value resp.CashewValue
+}
+
+func storeValues(t testing.TB, s *store.Store, keyValuePairs []KV) {
+	t.Helper()
+	for _, kv := range keyValuePairs {
+		key := kv.key.(resp.BulkString)
+		value := kv.value.(resp.BulkString)
+
+		err := s.Set(key, value)
+		if err != nil {
+			t.Fatalf("unexpected error %v", err)
+		}
+	}
 }
