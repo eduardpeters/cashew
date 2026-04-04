@@ -64,9 +64,17 @@ func (s *Store) Get(key resp.BulkString) (resp.CashewValue, error) {
 	}
 
 	if stored.expires && stored.expiry.Before(time.Now()) {
-		s.mu.Lock()
-		s.deleteKey(k)
-		s.mu.Unlock()
+		// Pass the the observed expired value to check we delete this same value, not another assignment
+		observedExpiry := stored.expiry
+		go func(key string, exp time.Time) {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+
+			current, ok := s.store[key]
+			if ok && current.expires && current.expiry.Equal(exp) {
+				s.deleteKey(k)
+			}
+		}(k, observedExpiry)
 
 		return resp.NewNull()
 	}
