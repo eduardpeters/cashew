@@ -190,11 +190,52 @@ func TestDeleteStoredValue(t *testing.T) {
 	}
 }
 
+func TestAddToStoredValue(t *testing.T) {
+	tests := []struct {
+		name   string
+		key    string
+		value  string
+		addQty int64
+		want   int64
+	}{
+		{"Increments 1 to 2", "counter", "1", 1, 2},
+		{"Increments 1 to 3", "counter", "1", 2, 3},
+		{"Decrements 1 to 0", "counter", "1", -1, 0},
+		{"Decrements 1 to -1", "counter", "1", -2, -1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := store.NewStore()
+			mustSetInStore(t, s, tt.key, tt.value)
+
+			bulkStringKey := mustNewBulkString(t, tt.key)
+			newValue, err := s.Add(bulkStringKey, tt.addQty)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if newValue.GetValue() != tt.want {
+				t.Errorf("incorrect added value, got %d want %d", newValue.GetValue(), tt.want)
+			}
+		})
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
 	if err != nil {
 		t.Fatalf("NewBulkString(%q): %v", s, err)
+	}
+	return v
+}
+
+func mustNewInteger(t testing.TB, s string) resp.Integer {
+	t.Helper()
+	v, err := resp.NewInteger(s)
+	if err != nil {
+		t.Fatalf("NewInteger(%q): %v", s, err)
 	}
 	return v
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -103,6 +104,39 @@ func (s *Store) Delete(key resp.BulkString) error {
 	return nil
 }
 
+func (s *Store) Add(key resp.BulkString, qty int64) (resp.Integer, error) {
+
+	stored, err := s.Get(key)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	current, ok := stored.(resp.BulkString)
+	if !ok {
+		return resp.Integer{}, fmt.Errorf("stored value is not bulk string: %v", stored)
+	}
+
+	currentInteger, err := parseBulkStringInteger(current)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	nextValueString := strconv.Itoa(int(currentInteger + qty))
+
+	k, err := extractKeyString(key)
+	newValue, err := resp.NewBulkString(nextValueString)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	s.mu.Lock()
+	currentStored := s.store[k]
+	s.store[k] = StoredValue{value: newValue, expires: currentStored.expires, expiry: currentStored.expiry}
+	s.mu.Unlock()
+
+	return resp.NewInteger(nextValueString)
+}
+
 // For use only with lock in calling context
 func (s *Store) deleteKey(key string) {
 	delete(s.store, key)
@@ -115,4 +149,17 @@ func extractKeyString(key resp.BulkString) (string, error) {
 		return "", fmt.Errorf("key value is not string: %v", v)
 	}
 	return k, nil
+}
+
+func parseBulkStringInteger(value resp.CashewValue) (int64, error) {
+	v := value.GetValue()
+	s, ok := v.(string)
+	if !ok {
+		return 0, fmt.Errorf("inner value is not string: %v", v)
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("value not integer representation: %s", s)
+	}
+	return n, nil
 }
