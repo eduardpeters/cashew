@@ -222,20 +222,27 @@ func TestAddToStoredValue(t *testing.T) {
 	}
 }
 
+func TestAddToMissingValue(t *testing.T) {
+	key := "counter"
+
+	s := store.NewStore()
+
+	bulkStringKey := mustNewBulkString(t, key)
+	newValue, err := s.Add(bulkStringKey, 1)
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if newValue.GetValue() != int64(1) {
+		t.Errorf("incorrect result from adding to missing value, got %d want %d", newValue.GetValue(), 1)
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
 	if err != nil {
 		t.Fatalf("NewBulkString(%q): %v", s, err)
-	}
-	return v
-}
-
-func mustNewInteger(t testing.TB, s string) resp.Integer {
-	t.Helper()
-	v, err := resp.NewInteger(s)
-	if err != nil {
-		t.Fatalf("NewInteger(%q): %v", s, err)
 	}
 	return v
 }

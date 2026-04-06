@@ -112,7 +112,15 @@ func (s *Store) Add(key resp.BulkString, qty int64) (resp.Integer, error) {
 
 	current, ok := stored.(resp.BulkString)
 	if !ok {
-		return resp.Integer{}, fmt.Errorf("stored value is not bulk string: %v", stored)
+		defaultValue, err := resp.NewBulkString("0")
+		if err != nil {
+			return resp.Integer{}, err
+		}
+		err = s.Set(key, defaultValue)
+		if err != nil {
+			return resp.Integer{}, err
+		}
+		return s.Add(key, qty)
 	}
 
 	currentInteger, err := parseBulkStringInteger(current)
