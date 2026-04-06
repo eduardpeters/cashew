@@ -105,7 +105,6 @@ func (s *Store) Delete(key resp.BulkString) error {
 }
 
 func (s *Store) Add(key resp.BulkString, qty int64) (resp.Integer, error) {
-
 	stored, err := s.Get(key)
 	if err != nil {
 		return resp.Integer{}, err
@@ -130,9 +129,21 @@ func (s *Store) Add(key resp.BulkString, qty int64) (resp.Integer, error) {
 	}
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	currentStored := s.store[k]
+	if currentStored.value.GetValue() != stored.GetValue() {
+		currentInteger, err := parseBulkStringInteger(current)
+		if err != nil {
+			return resp.Integer{}, err
+		}
+		nextValueString := strconv.Itoa(int(currentInteger + qty))
+		newValue, err = resp.NewBulkString(nextValueString)
+		if err != nil {
+			return resp.Integer{}, err
+		}
+	}
 	s.store[k] = StoredValue{value: newValue, expires: currentStored.expires, expiry: currentStored.expiry}
-	s.mu.Unlock()
 
 	return resp.NewInteger(nextValueString)
 }
