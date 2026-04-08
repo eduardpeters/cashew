@@ -50,6 +50,10 @@ func HandleCommand(s *store.Store, cmd []resp.CashewValue) (Result, error) {
 		return HandleExists(s, cmd[1:])
 	case DEL:
 		return HandleDel(s, cmd[1:])
+	case INCR:
+		return HandleIncr(s, cmd[1:])
+	case DECR:
+		return HandleDecr(s, cmd[1:])
 	// Commands outside the scope to support clients
 	case "CLIENT":
 		return ResultOK(), nil

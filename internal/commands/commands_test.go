@@ -133,6 +133,20 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{":0\r\n", false},
 		},
+		{"handles INCR",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "INCR"),
+				mustNewBulkString(t, "counter"),
+			},
+			commands.Result{":1\r\n", false},
+		},
+		{"handles DECR",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "DECR"),
+				mustNewBulkString(t, "counter"),
+			},
+			commands.Result{":-1\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {

@@ -53,6 +53,10 @@ func TestHandleInvalidIncr(t *testing.T) {
 		keyValuePairs []KV
 		input         []resp.CashewValue
 	}{
+		{"returns error if no key is provided",
+			[]KV{{mustNewBulkString(t, "counter"), mustNewBulkString(t, "un0")}},
+			[]resp.CashewValue{},
+		},
 		{"returns error if stored value is not parseable as int",
 			[]KV{{mustNewBulkString(t, "counter"), mustNewBulkString(t, "un0")}},
 			[]resp.CashewValue{mustNewBulkString(t, "counter")},
