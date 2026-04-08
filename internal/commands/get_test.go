@@ -8,30 +8,25 @@ import (
 	"github.com/eduardpeters/cashew/internal/store"
 )
 
-type keyValuePair struct {
-	key   string
-	value string
-}
-
 func TestHandleGet(t *testing.T) {
 	tests := []struct {
 		name     string
-		pairs    []keyValuePair
+		pairs    []KV
 		input    []resp.CashewValue
 		expected commands.Result
 	}{
 		{"replies null if store empty",
-			[]keyValuePair{},
+			[]KV{},
 			[]resp.CashewValue{mustNewBulkString(t, "name")},
 			commands.Result{mustNewNull(t).Marshal(), false},
 		},
 		{"replies with null if key is not found",
-			[]keyValuePair{{"name", "juan"}},
+			[]KV{{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan")}},
 			[]resp.CashewValue{mustNewBulkString(t, "not:there")},
 			commands.Result{mustNewNull(t).Marshal(), false},
 		},
 		{"replies with stored value if key is found",
-			[]keyValuePair{{"name", "juan"}},
+			[]KV{{mustNewBulkString(t, "name"), mustNewBulkString(t, "juan")}},
 			[]resp.CashewValue{mustNewBulkString(t, "name")},
 			commands.Result{mustNewBulkString(t, "juan").Marshal(), false},
 		},
@@ -40,19 +35,7 @@ func TestHandleGet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := store.NewStore()
-			for _, pair := range tt.pairs {
-				k := mustNewBulkString(t, pair.key)
-				v := mustNewBulkString(t, pair.value)
-				key, ok := k.(resp.BulkString)
-				if !ok {
-					t.Fatalf("Key not BulkString %v", k)
-				}
-				value, ok := v.(resp.BulkString)
-				if !ok {
-					t.Fatalf("Value not BulkString %v", v)
-				}
-				s.Set(key, value)
-			}
+			storeValues(t, s, tt.pairs)
 
 			r, err := commands.HandleGet(s, tt.input)
 			if err != nil {
