@@ -156,6 +156,36 @@ func (s *Store) Add(key resp.BulkString, qty int64) (resp.Integer, error) {
 	return resp.NewInteger(nextValueString)
 }
 
+func (s *Store) Prepend(key resp.BulkString, elements ...resp.CashewValue) (resp.Integer, error) {
+	k, err := extractKeyString(key)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	exists, err := s.Exists(key)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !exists {
+		a, err := resp.NewArray(elements)
+		if err != nil {
+			return resp.Integer{}, err
+		}
+
+		s.store[k] = StoredValue{value: a, expires: false}
+
+		addedCount := strconv.Itoa(int(len(elements)))
+
+		return resp.NewInteger(addedCount)
+	}
+
+	return resp.NewInteger("0")
+}
+
 // For use only with lock in calling context
 func (s *Store) deleteKey(key string) {
 	delete(s.store, key)

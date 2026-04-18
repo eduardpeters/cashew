@@ -238,6 +238,54 @@ func TestAddToMissingValue(t *testing.T) {
 	}
 }
 
+func TestPrependElementsToEmptyKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		elements []string
+	}{
+		{"Prepends to an empty key", "list", []string{"a"}},
+		{"Prepends multiple values to an empty key", "list", []string{"a", "b", "c"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := store.NewStore()
+
+			k := mustNewBulkString(t, tt.key)
+
+			elementsToAdd := make([]resp.CashewValue, len(tt.elements))
+			for i, e := range tt.elements {
+				elementsToAdd[i] = mustNewBulkString(t, e)
+			}
+
+			count, err := s.Prepend(k, elementsToAdd...)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if count.GetValue() != int64(len(tt.elements)) {
+				t.Errorf("incorrect added count, got %d want %d", count.GetValue(), len(tt.elements))
+			}
+
+			stored, err := s.Get(k)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+			array, ok := stored.(resp.Array)
+			if !ok {
+				t.Fatalf("Stored value not array %t", stored)
+			}
+			values, ok := array.GetValue().([]resp.CashewValue)
+			if !ok {
+				t.Fatalf("Array values not cashew values %t", stored)
+			}
+			if len(values) != len(tt.elements) {
+				t.Errorf("incorrect stored array length, got %d want %d", len(values), len(tt.elements))
+			}
+		})
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
