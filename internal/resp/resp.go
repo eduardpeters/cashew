@@ -35,8 +35,8 @@ type Null struct {
 	value any
 }
 
-func NewNull() (*Null, error) {
-	return &Null{}, nil
+func NewNull() (Null, error) {
+	return Null{}, nil
 }
 
 func (n Null) GetValue() any {
