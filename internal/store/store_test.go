@@ -238,13 +238,24 @@ func TestAddToMissingValue(t *testing.T) {
 	}
 }
 
+func TestPrependToNonArrayValueFails(t *testing.T) {
+	s := store.NewStore()
+	mustSetInStore(t, s, "notlist", "notlist")
+
+	_, err := s.Prepend(mustNewBulkString(t, "notlist"), mustNewBulkString(t, "notlist"))
+	if err == nil {
+		t.Errorf("Expected error, got %v", err)
+	}
+}
+
 func TestPrependElementsToEmptyKey(t *testing.T) {
 	tests := []struct {
 		name     string
 		key      string
 		elements []string
 	}{
-		{"Prepends to an empty key", "list", []string{"a"}},
+		{"Prepends nothing to an empty key", "list", []string{}},
+		{"Prepends single value to an empty key", "list", []string{"a"}},
 		{"Prepends multiple values to an empty key", "list", []string{"a", "b", "c"}},
 	}
 	for _, tt := range tests {
@@ -281,6 +292,77 @@ func TestPrependElementsToEmptyKey(t *testing.T) {
 			}
 			if len(values) != len(tt.elements) {
 				t.Errorf("incorrect stored array length, got %d want %d", len(values), len(tt.elements))
+			}
+
+			// Elements are preprended one after another
+			for offset := 0; offset < len(tt.elements); offset++ {
+				preprended := values[offset].GetValue()
+				wanted := tt.elements[len(tt.elements)-offset-1]
+				if preprended != wanted {
+					t.Errorf("incorrect prepend order, got %s want %s", preprended, wanted)
+				}
+			}
+		})
+	}
+}
+
+func TestPrependElementsToExistingKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		elements []string
+	}{
+		{"Prepends nothing to an existing key", "list", []string{}},
+		{"Prepends single value to an existing key", "list", []string{"a"}},
+		{"Prepends multiple values to an existing key", "list", []string{"a", "b", "c"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := store.NewStore()
+
+			k := mustNewBulkString(t, tt.key)
+			_, err := s.Prepend(k, mustNewBulkString(t, "0"))
+			if err != nil {
+				t.Fatalf("Unexpected error populating store %v", err)
+			}
+
+			elementsToAdd := make([]resp.CashewValue, len(tt.elements))
+			for i, e := range tt.elements {
+				elementsToAdd[i] = mustNewBulkString(t, e)
+			}
+
+			count, err := s.Prepend(k, elementsToAdd...)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if count.GetValue() != int64(len(tt.elements)+1) {
+				t.Errorf("incorrect added count, got %d want %d", count.GetValue(), len(tt.elements)+1)
+			}
+
+			stored, err := s.Get(k)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+			array, ok := stored.(resp.Array)
+			if !ok {
+				t.Fatalf("Stored value not array %t", stored)
+			}
+			values, ok := array.GetValue().([]resp.CashewValue)
+			if !ok {
+				t.Fatalf("Array values not cashew values %t", stored)
+			}
+			if len(values) != len(tt.elements)+1 {
+				t.Errorf("incorrect stored array length, got %d want %d", len(values), len(tt.elements)+1)
+			}
+
+			// Elements are preprended one after another
+			for offset := 0; offset < len(tt.elements); offset++ {
+				preprended := values[offset].GetValue()
+				wanted := tt.elements[len(tt.elements)-offset-1]
+				if preprended != wanted {
+					t.Errorf("incorrect prepend order, got %s want %s", preprended, wanted)
+				}
 			}
 		})
 	}
