@@ -147,6 +147,14 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{":-1\r\n", false},
 		},
+		{"handles LPUSH",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "LPUSH"),
+				mustNewBulkString(t, "list"),
+				mustNewBulkString(t, "element"),
+			},
+			commands.Result{":1\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {
