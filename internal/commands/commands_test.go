@@ -155,6 +155,14 @@ func TestHandleCommand(t *testing.T) {
 			},
 			commands.Result{":1\r\n", false},
 		},
+		{"handles RPUSH",
+			[]resp.CashewValue{
+				mustNewBulkString(t, "RPUSH"),
+				mustNewBulkString(t, "list"),
+				mustNewBulkString(t, "element"),
+			},
+			commands.Result{":1\r\n", false},
+		},
 	}
 
 	for _, tt := range tests {

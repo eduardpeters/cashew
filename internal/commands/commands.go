@@ -56,6 +56,8 @@ func HandleCommand(s *store.Store, cmd []resp.CashewValue) (Result, error) {
 		return HandleDecr(s, cmd[1:])
 	case LPUSH:
 		return HandleLPush(s, cmd[1:])
+	case RPUSH:
+		return HandleRPush(s, cmd[1:])
 	// Commands outside the scope to support clients
 	case "CLIENT":
 		return ResultOK(), nil
