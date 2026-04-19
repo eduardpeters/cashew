@@ -171,7 +171,7 @@ func (s *Store) Prepend(key resp.BulkString, elements ...resp.CashewValue) (resp
 	if !ok {
 		_, isEmptyKey := stored.(resp.Null)
 		if !isEmptyKey {
-			return resp.Integer{}, fmt.Errorf("stored value is not empty: %v", stored)
+			return resp.Integer{}, fmt.Errorf("stored value is not array: %v", stored)
 		}
 	}
 
@@ -205,7 +205,57 @@ func (s *Store) Prepend(key resp.BulkString, elements ...resp.CashewValue) (resp
 	finalLength := strconv.Itoa(int(len(newArray)))
 
 	return resp.NewInteger(finalLength)
+}
 
+func (s *Store) Append(key resp.BulkString, elements ...resp.CashewValue) (resp.Integer, error) {
+	k, err := extractKeyString(key)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	stored, err := s.Get(key)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	current, ok := stored.(resp.Array)
+	if !ok {
+		_, isEmptyKey := stored.(resp.Null)
+		if !isEmptyKey {
+			return resp.Integer{}, fmt.Errorf("stored value is not array: %v", stored)
+		}
+	}
+
+	currentValue := current.GetValue()
+	storedArray, ok := currentValue.([]resp.CashewValue)
+	if !ok {
+		return resp.Integer{}, fmt.Errorf("inner value is not array: %v", currentValue)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	newArray := make([]resp.CashewValue, len(elements)+len(storedArray))
+	i := 0
+	for _, se := range storedArray {
+		newArray[i] = se
+		i++
+	}
+	for _, e := range elements {
+		newArray[i] = e
+		i++
+	}
+
+	a, err := resp.NewArray(newArray)
+	if err != nil {
+		return resp.Integer{}, err
+	}
+
+	s.store[k] = StoredValue{value: a, expires: false}
+
+	finalLength := strconv.Itoa(int(len(newArray)))
+
+	return resp.NewInteger(finalLength)
 }
 
 // For use only with lock in calling context

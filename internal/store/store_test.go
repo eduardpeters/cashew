@@ -368,6 +368,136 @@ func TestPrependElementsToExistingKey(t *testing.T) {
 	}
 }
 
+func TestAppendToNonArrayValueFails(t *testing.T) {
+	s := store.NewStore()
+	mustSetInStore(t, s, "notlist", "notlist")
+
+	_, err := s.Append(mustNewBulkString(t, "notlist"), mustNewBulkString(t, "notlist"))
+	if err == nil {
+		t.Errorf("Expected error, got %v", err)
+	}
+}
+
+func TestAppendElementsToEmptyKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		elements []string
+	}{
+		{"Appends nothing to an empty key", "list", []string{}},
+		{"Appends single value to an empty key", "list", []string{"a"}},
+		{"Appends multiple values to an empty key", "list", []string{"a", "b", "c"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := store.NewStore()
+
+			k := mustNewBulkString(t, tt.key)
+
+			elementsToAdd := make([]resp.CashewValue, len(tt.elements))
+			for i, e := range tt.elements {
+				elementsToAdd[i] = mustNewBulkString(t, e)
+			}
+
+			count, err := s.Append(k, elementsToAdd...)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if count.GetValue() != int64(len(tt.elements)) {
+				t.Errorf("incorrect added count, got %d want %d", count.GetValue(), len(tt.elements))
+			}
+
+			stored, err := s.Get(k)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+			array, ok := stored.(resp.Array)
+			if !ok {
+				t.Fatalf("Stored value not array %t", stored)
+			}
+			values, ok := array.GetValue().([]resp.CashewValue)
+			if !ok {
+				t.Fatalf("Array values not cashew values %t", stored)
+			}
+			if len(values) != len(tt.elements) {
+				t.Errorf("incorrect stored array length, got %d want %d", len(values), len(tt.elements))
+			}
+
+			// Elements are appended one after another
+			for i := 0; i < len(tt.elements); i++ {
+				appended := values[i].GetValue()
+				wanted := tt.elements[i]
+				if appended != wanted {
+					t.Errorf("incorrect apppend order, got %s want %s", appended, wanted)
+				}
+			}
+		})
+	}
+}
+
+func TestAppendElementsToExistingKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		elements []string
+	}{
+		{"Appends nothing to an existing key", "list", []string{}},
+		{"Appends single value to an existing key", "list", []string{"a"}},
+		{"Appends multiple values to an existing key", "list", []string{"a", "b", "c"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := store.NewStore()
+
+			k := mustNewBulkString(t, tt.key)
+			_, err := s.Prepend(k, mustNewBulkString(t, "0"))
+			if err != nil {
+				t.Fatalf("Unexpected error populating store %v", err)
+			}
+
+			elementsToAdd := make([]resp.CashewValue, len(tt.elements))
+			for i, e := range tt.elements {
+				elementsToAdd[i] = mustNewBulkString(t, e)
+			}
+
+			count, err := s.Append(k, elementsToAdd...)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+
+			if count.GetValue() != int64(len(tt.elements)+1) {
+				t.Errorf("incorrect added count, got %d want %d", count.GetValue(), len(tt.elements)+1)
+			}
+
+			stored, err := s.Get(k)
+			if err != nil {
+				t.Fatalf("Unexpected error %v", err)
+			}
+			array, ok := stored.(resp.Array)
+			if !ok {
+				t.Fatalf("Stored value not array %t", stored)
+			}
+			values, ok := array.GetValue().([]resp.CashewValue)
+			if !ok {
+				t.Fatalf("Array values not cashew values %t", stored)
+			}
+			if len(values) != len(tt.elements)+1 {
+				t.Errorf("incorrect stored array length, got %d want %d", len(values), len(tt.elements)+1)
+			}
+
+			// Elements are appended one after another
+			for i := 0; i < len(tt.elements); i++ {
+				appended := values[i+1].GetValue()
+				wanted := tt.elements[i]
+				if appended != wanted {
+					t.Errorf("incorrect apppend order, got %s want %s", appended, wanted)
+				}
+			}
+		})
+	}
+}
+
 func mustNewBulkString(t testing.TB, s string) resp.BulkString {
 	t.Helper()
 	v, err := resp.NewBulkString(s)
