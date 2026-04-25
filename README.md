@@ -13,4 +13,4 @@ This is my take of [Build Your Own Redis Server](https://codingchallenges.fyi/ch
 | Set and Get keys                                                          | :white_check_mark:    |
 | Concurrent access                                                         | :white_check_mark:    |
 | Implement expiry options                                                  | :white_check_mark:    |
-| Implement `EXISTS`, `DEL`, `INCR`, `DECR`, `LPUSH`, `RPUSH`, `SAVE`       | Pending               |
+| Implement `EXISTS`, `DEL`, `INCR`, `DECR`, `LPUSH`, `RPUSH`               | :white_check_mark:    |
